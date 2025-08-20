@@ -7,7 +7,7 @@ export default function ModeSelector() {
       <h1 className="sr-only">Timeline Jumping</h1>
       <img src="/assets/logo.svg" alt="Timeline Jumping" className="h-10 w-auto" />
       <p className="text-ink-600 max-w-prose">
-        Choose how you'd like to engage: a clean, paginated text guide, or the interactive, offline-first Digital Timeline Jump.
+        Choose how you'd like to engage: a clean text guide, or the interactive, offline-first Digital Timeline Jump.
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <Link
