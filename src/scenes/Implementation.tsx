@@ -215,7 +215,7 @@ export default function Implementation() {
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(`TGJ Reminder`, {
               body: due.text,
-              icon: '/favicon.ico',
+              icon: '/icons/icon-192.png',
               tag: `reminder-${due.id}`,
               requireInteraction: false
             });
