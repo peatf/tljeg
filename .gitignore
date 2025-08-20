@@ -1,0 +1,29 @@
+# Node / Vite / TypeScript
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+coverage/
+
+# Mac / OS
+.DS_Store
+
+# Env / logs
+.env
+.env.*
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Future: Tauri build outputs
+src-tauri/target/
+src-tauri/.cargo/
+**/*.app
+**/*.dmg
+**/*.msi
+**/*.exe

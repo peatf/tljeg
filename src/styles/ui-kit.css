@@ -1,0 +1,116 @@
+/* UI Kit tokens and component styles for stacked buttons and floating-label inputs */
+
+:root {
+  --color-bg: #fafaf2;
+  --color-bg-alt: #fafbec;
+  --color-base-1: #e1e1d7;
+  --color-base-2: #afafa7;
+  --color-base-3: #7c7d76;
+  --color-base-4: #4b4c47;
+  --color-base-5: #323230;
+  --color-accent: #005FF7;
+  --color-accent-glow: rgba(0, 95, 247, 0.15);
+  --color-text-primary: #323230;
+  --color-text-secondary: #7c7d76;
+  --font-body: Inter, ui-sans-serif, system-ui, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --font-display: Inter, ui-sans-serif, system-ui, Helvetica, Arial, sans-serif;
+}
+
+.font-mono { font-family: var(--font-mono); }
+.font-display { font-family: var(--font-display); }
+
+/* Stacked button base */
+.stacked-button {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.stacked-button:hover { transform: translateY(-4px) scale(1.03); }
+.stacked-button .layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stacked-button .feathered { box-shadow: 0 0 15px 2px var(--layer-color, transparent); }
+.stacked-button:active .layer { transform: translate(-50%, -50%) scale(0.95); }
+
+/* Large rectangular CTA */
+.rect-btn { width: 320px; height: 120px; }
+/* Size variants for rectangular button */
+.rect-btn--sm { width: 220px; height: 56px; }
+.rect-btn--md { width: 280px; height: 72px; }
+.rect-btn--wide { width: 520px; height: 72px; }
+@media (max-width: 640px) {
+  .rect-btn--wide { width: 100%; }
+}
+.rect-btn .l1 { width: 100%; height: 100%; background-color: var(--color-base-1); border-radius: 12px; }
+.rect-btn .l2 { --layer-color: var(--color-base-2); width: 94%; height: 92%; background-color: var(--layer-color); border-radius: 10px; }
+.rect-btn .l3 { --layer-color: var(--color-base-3); width: 88%; height: 84%; background-color: var(--layer-color); border-radius: 8px; }
+.rect-btn .l4 { --layer-color: var(--color-base-4); width: 82%; height: 74%; background-color: var(--layer-color); border-radius: 6px; }
+.rect-btn .l5 { --layer-color: var(--color-base-5); width: 70%; height: 60%; background-color: var(--layer-color); border-radius: 5px; }
+.rect-btn .l6 { --layer-color: rgba(25, 25, 23, 0.8); width: 58%; height: 44%; background-color: var(--layer-color); border-radius: 4px; }
+.rect-btn:active .l2 { transform: translate(-50%, -50%) scale(0.94); }
+.rect-btn:active .l3 { transform: translate(-50%, -50%) scale(0.93); }
+.rect-btn:active .l4 { transform: translate(-50%, -50%) scale(0.92); }
+.rect-btn:active .l5 { transform: translate(-50%, -50%) scale(0.91); }
+.rect-btn:active .l6 { transform: translate(-50%, -50%) scale(0.90); }
+
+/* Circular nav button */
+.nav-btn { width: 52px; height: 52px; }
+.nav-btn .layer { border-radius: 50%; }
+.nav-btn .l1 { width: 100%; height: 100%; background-color: var(--color-base-1); }
+.nav-btn .l2 { --layer-color: var(--color-base-2); width: 85%; height: 85%; background-color: var(--layer-color); }
+.nav-btn .l3 { --layer-color: var(--color-base-3); width: 70%; height: 70%; background-color: var(--layer-color); }
+.nav-btn .l4 { --layer-color: var(--color-base-4); width: 55%; height: 55%; background-color: var(--layer-color); }
+.nav-btn .nav-icon { position: relative; z-index: 10; color: var(--color-base-3); transition: all 0.2s; }
+.nav-btn:hover .nav-icon { color: var(--color-text-primary); }
+.nav-btn.active .l4 { background-color: var(--color-accent); box-shadow: 0 0 15px var(--color-accent-glow); }
+.nav-btn.active .nav-icon { color: white; }
+
+/* Floating label input panel */
+.input-panel {
+  position: relative;
+  border: 1px solid var(--color-base-4);
+  border-radius: 8px;
+  background: rgba(50, 50, 48, 0.05);
+  transition: all 0.2s ease;
+}
+.input-panel:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent), 0 0 10px var(--color-accent-glow);
+}
+.input-panel-label {
+  position: absolute;
+  top: -10px;
+  left: 12px;
+  background: var(--color-bg-alt);
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: color 0.2s ease;
+}
+.input-panel:focus-within .input-panel-label { color: var(--color-accent); }
+.form-element {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 16px;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.form-element:focus { outline: none; }

@@ -1,0 +1,214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Minimal typography */
+:root {
+  color-scheme: light; /* no dark mode for now */
+  /* Bigger icons: scale with viewport width to avoid cqw flash */
+  /* 22% of container (85vw) => 18.7vw */
+  --artifact-node-size: clamp(80px, 18.7vw, 160px);
+  --artifact-void-size: calc(var(--artifact-node-size) * 1.8);
+  /* Reserve bottom space below the radial map to keep its square size stable
+     when the bottom legend is removed. Tuned per breakpoint below. */
+  --artifact-bottom-reserve: 32px; /* xs default - reduced for mobile */
+}
+
+/* Mobile-specific icon sizing for better visibility */
+@media (max-width: 640px) {
+  :root {
+    --artifact-node-size: clamp(160px, 45vw, 240px);
+    --artifact-void-size: calc(var(--artifact-node-size) * 1.8);
+  }
+}body {
+  font-family: theme('fontFamily.grotesk');
+  overflow-x: hidden;
+  /* Background image is rendered in a fixed ::before layer so it isn't
+     covered by app content on mobile (some mobile browsers ignore
+     background-attachment or render body backgrounds behind other
+     stacking contexts). Keep body itself for background-color and
+     overall layout. */
+  position: relative;
+}
+
+/* Fixed background layer to ensure consistent rendering on mobile.
+   Using `::before` keeps the image behind all content while allowing
+   the app to use its own background colors or overlays. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  /* Use a non-negative z-index; iOS Safari can fail to paint
+     fixed pseudo-elements with negative stacking. */
+  z-index: 0;
+  background-image: url('/assets/desktopbkg.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  /* Use `background-attachment: scroll` behavior implicitly on mobile */
+}
+
+@media (max-width: 640px) {
+  body::before {
+    background-image: url('/assets/mobilebkg.webp');
+  }
+}
+
+/* Ensure app content paints above the fixed background layer */
+#root { position: relative; z-index: 1; }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Safe-area helper for sticky footers on iOS */
+.safe-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+/* Minimal readable typography for Markdown bodies */
+article {
+  word-break: break-word;
+}
+article h1, article h2 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+article p {
+  margin: 0.5rem 0;
+}
+
+/* Artifact icon styling - bigger and more prominent */
+.artifact-icon {
+  width: var(--artifact-node-size);
+  height: var(--artifact-node-size);
+  object-fit: contain;
+  transition: transform 0.2s ease-in-out;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* VOID icon is 1.7x larger than other nodes */
+.artifact-icon.void-icon {
+  width: var(--artifact-void-size);
+  height: var(--artifact-void-size);
+}
+
+/* Radial artifact map container - square responsive layout */
+.artifact-map-container {
+  position: relative;
+  margin: 0 auto;
+  /* Reserve space that the old bottom legend used to occupy */
+  margin-block-end: var(--artifact-bottom-reserve);
+  /* Fixed stable sizing - let CSS handle all responsiveness */
+  height: clamp(320px, 85vw, 720px);
+  width: clamp(320px, 85vw, 720px);
+  max-width: 720px;
+  max-height: 720px;
+  /* Prevent any layout shifts */
+  flex-shrink: 0;
+  /* Container queries are not required for sizing now, but harmless */
+  container-type: size;
+}
+
+/* Mobile artifact map container - vertical layout */
+.artifact-map-container-mobile {
+  position: relative;
+  margin: 0 auto;
+  /* Reserve space that the old bottom legend used to occupy */
+  margin-block-end: var(--artifact-bottom-reserve);
+  /* Zigzag layout for mobile - 2-column S-curve */
+  height: clamp(500px, 80vh, 700px);
+  width: clamp(320px, 85vw, 500px);
+  max-width: 500px;
+  /* Prevent any layout shifts */
+  flex-shrink: 0;
+  /* Container queries are not required for sizing now, but harmless */
+  container-type: size;
+}
+
+/* Responsive tuning for the reserved space under the artifact map */
+@media (min-width: 768px) { /* md */
+  :root { --artifact-bottom-reserve: 56px; }
+}
+@media (min-width: 1024px) { /* lg */
+  :root { --artifact-bottom-reserve: 64px; }
+}
+@media (min-width: 1440px) { /* xl */
+  :root { --artifact-bottom-reserve: 72px; }
+}
+
+/* Optional: reserve a bit of space under the simple FlowMap grid so removing
+   the bottom legend there doesn't alter parent height on tighter viewports. */
+.flowmap-reserve {
+  padding-bottom: clamp(16px, 4vh, 32px);
+}
+
+/* Absolute positioned nodes within the square container */
+.artifact-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/* Mobile tweak: bring Clarity label a bit closer under its icon */
+@media (max-width: 640px) {
+  .artifact-node[data-id="clarity"] a span { /* label below image */
+    margin-top: 0.25rem; /* was mt-2 via class; this soft override reduces space */
+  }
+}
+
+/* SVG overlay for arrows - sits above container, allows clicks through to nodes */
+.artifact-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Canvas overlay for pixelated arrows */
+.pixel-arrow-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+}
+
+/* UI Kit CSS is imported via JS in main.tsx to avoid @import ordering issues */
+
+/* Variable font utilities for Doto and VT323 as requested */
+.doto-base {
+  font-family: "Doto", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+/* Use .doto-<uniquifier> with weight number in the class name for convenience */
+.doto-100 { font-weight: 100; }
+.doto-200 { font-weight: 200; }
+.doto-300 { font-weight: 300; }
+.doto-400 { font-weight: 400; }
+.doto-500 { font-weight: 500; }
+.doto-600 { font-weight: 600; }
+.doto-700 { font-weight: 700; }
+.doto-800 { font-weight: 800; }
+.doto-900 { font-weight: 900; }
+
+.vt323-regular {
+  font-family: "VT323", monospace;
+  font-weight: 400;
+  font-style: normal;
+}

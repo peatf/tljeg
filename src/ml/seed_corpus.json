@@ -1,0 +1,7 @@
+{
+  "needs": ["rest", "warmth", "water", "quiet", "softness", "permission", "time", "support", "light", "breath"],
+  "traits": ["steady", "curious", "clear", "tender", "focused", "playful", "patient", "bold", "gentle", "grounded"],
+  "contexts": ["kitchen cleanup", "morning light", "desk reset", "walk outside", "tea ritual", "soft clothes", "open window"],
+  "frictions": ["scrolling", "overcommit", "clutter", "late nights", "self-critique"]
+}
+
