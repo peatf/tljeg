@@ -12,6 +12,12 @@ export default defineConfig({
   plugins: [
   react(),
   svgr(),
+    visualizer({ 
+      filename: 'dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*', 'models/**/*'],
@@ -102,7 +108,33 @@ export default defineConfig({
     })
   ],
   build: {
-    sourcemap: true
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+      },
+      format: {
+        comments: false,
+      },
+      mangle: {
+        // Keep property names for compatibility
+        properties: false
+      }
+    },
+    sourcemap: false, // Disable public sourcemaps
+    rollupOptions: {
+      output: {
+        // Split chunks for better caching
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ml: ['@xenova/transformers'],
+          animations: ['framer-motion']
+        }
+      }
+    }
   }
 });
 

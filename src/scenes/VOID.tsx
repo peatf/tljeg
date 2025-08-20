@@ -337,20 +337,21 @@ export default function VOIDScene() {
             />
           )}
           
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <button 
               onClick={() => setState('enter_labels')}
               className="px-4 py-2 border rounded"
             >
               Back
             </button>
-            <button 
+            <StackedButton
               onClick={() => startHold()}
               disabled={!selectedAnchor || (selectedAnchor.type === 'custom' && !customAnchor.trim())}
-              className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50"
+              aria-label="Begin Hold"
+              className="rect-btn--sm"
             >
-              Begin Hold (90s)
-            </button>
+              BEGIN HOLD (90s)
+            </StackedButton>
           </div>
         </div>
       </section>
