@@ -24,7 +24,7 @@ export default function ModeSelector() {
           aria-label="Open Digital Timeline Jump"
         >
           <h2 className="text-xl font-semibold">Digital Timeline Jump</h2>
-          <p className="text-ink-600">Scene-based practice, offline ML.</p>
+          <p className="text-ink-600">Interface based practice, offline Machine Learning.</p>
         </Link>
       </div>
       {/* Avatar below the buttons for the opening page */}
