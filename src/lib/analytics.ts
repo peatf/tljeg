@@ -6,6 +6,21 @@ export interface ArtifactMapNavigateEvent {
   source: 'node' | 'arrow';
 }
 
+export interface ClarityMultiInputUsedEvent {
+  field_count: number;
+  context_length: number;
+  chip_count: number;
+  top_chip_source: 'seed' | 'user';
+  processing_time: number;
+}
+
+export interface ClarityTraitSelectedEvent {
+  trait_text: string;
+  input_contexts: string[];
+  ranking_score?: number;
+  synonym_matched: boolean;
+}
+
 // Generic analytics event interface
 export interface AnalyticsEvent {
   event: string;
@@ -18,6 +33,21 @@ const artifactMapNavigateSchema = {
   to: (value: any) => typeof value === 'string' && value.length > 0,
   step_index: (value: any) => typeof value === 'number' && value > 0,
   source: (value: any) => value === 'node' || value === 'arrow'
+};
+
+const clarityMultiInputUsedSchema = {
+  field_count: (value: any) => typeof value === 'number' && value >= 0,
+  context_length: (value: any) => typeof value === 'number' && value >= 0,
+  chip_count: (value: any) => typeof value === 'number' && value >= 0,
+  top_chip_source: (value: any) => value === 'seed' || value === 'user',
+  processing_time: (value: any) => typeof value === 'number' && value >= 0
+};
+
+const clarityTraitSelectedSchema = {
+  trait_text: (value: any) => typeof value === 'string' && value.length > 0,
+  input_contexts: (value: any) => Array.isArray(value) && value.every((item: any) => typeof item === 'string'),
+  ranking_score: (value: any) => value === undefined || (typeof value === 'number' && value >= 0),
+  synonym_matched: (value: any) => typeof value === 'boolean'
 };
 
 function validatePayload(payload: any, schema: Record<string, (value: any) => boolean>): boolean {
@@ -54,6 +84,12 @@ export function track(event: string, payload: Record<string, any>): void {
       case 'artifact_map_navigate':
         isValid = validatePayload(payload, artifactMapNavigateSchema);
         break;
+      case 'clarity_multi_input_used':
+        isValid = validatePayload(payload, clarityMultiInputUsedSchema);
+        break;
+      case 'clarity_trait_selected':
+        isValid = validatePayload(payload, clarityTraitSelectedSchema);
+        break;
       default:
         if (process.env.NODE_ENV === 'development') {
           console.warn(`Unknown analytics event type: ${event}`);
@@ -87,4 +123,14 @@ export function track(event: string, payload: Record<string, any>): void {
 // Convenience function for artifact map navigation events
 export function trackArtifactMapNavigate(data: ArtifactMapNavigateEvent): void {
   track('artifact_map_navigate', data);
+}
+
+// Convenience function for clarity multi-input usage events
+export function trackClarityMultiInputUsed(data: ClarityMultiInputUsedEvent): void {
+  track('clarity_multi_input_used', data);
+}
+
+// Convenience function for clarity trait selection events
+export function trackClarityTraitSelected(data: ClarityTraitSelectedEvent): void {
+  track('clarity_trait_selected', data);
 }

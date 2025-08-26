@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { exportAll, importAll, type Dump } from '../storage/export';
+import { exportAll, importAll, type Dump, exportUserFriendly } from '../storage/export';
 import { db } from '../storage/db';
 import { listContexts, listRuntimeSpecs } from '../storage/storage';
 import InlineHelp from '../components/InlineHelp';
@@ -141,6 +141,22 @@ export default function StorageReveal() {
     }
   }
 
+  async function handleExportSummary() {
+    try {
+      const blob = await exportUserFriendly();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const date = new Date().toISOString().slice(0, 10);
+      a.download = `tja-summary-${date}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('Downloaded your summary.');
+    } catch (e) {
+      setStatus('Summary download failed');
+    }
+  }
+
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -199,6 +215,8 @@ export default function StorageReveal() {
       <div className="flex gap-3 flex-wrap items-center">
         <button className="px-4 py-2 border rounded" onClick={handleExport} aria-label="Download a copy">Download a copy</button>
         <InlineHelp>Downloads a backup file (JSON) of your data. Keep it private. You can restore it later with “Upload a saved copy”.</InlineHelp>
+        <button className="px-4 py-2 border rounded" onClick={handleExportSummary} aria-label="Download Summary PDF">Download Summary (PDF)</button>
+        <InlineHelp>Downloads a clean, human-readable PDF of your journey — traits, evidence, plans, timeline, and patterns.</InlineHelp>
         <label className="px-4 py-2 border rounded cursor-pointer" aria-label="Upload a saved copy">
           Upload a saved copy
           <input type="file" accept="application/json" className="sr-only" onChange={handleImport} />

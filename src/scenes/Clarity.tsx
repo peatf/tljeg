@@ -4,13 +4,19 @@ import Timer from '../components/Timer';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChipList } from '../components/Chips';
 import { addEntry, addTrait, listEntries, listTraits } from '../storage/storage';
-import { getSuggestions, ingestUserText, type SuggestResult } from '../ml';
+import { getSuggestions, getSuggestionsWithContext, ingestUserText, type SuggestResult } from '../ml';
+import { trackClarityMultiInputUsed, trackClarityTraitSelected } from '../lib/analytics';
+import { getContextFields, calculateContextLength, checkSynonymMatch } from '../ml/context_aggregator';
 import StackedButton from '../components/ui/StackedButton';
 import InputPanel from '../components/ui/InputPanel';
 
 export default function Clarity() {
   const [searchParams] = useSearchParams();
   const gentleMode = searchParams.get('mode') === 'gentle';
+  
+  // Feature flag for multi-context functionality
+  const ENABLE_MULTI_CONTEXT = typeof window !== 'undefined' && 
+    localStorage.getItem('clarity_multi_context') !== 'false';
 
   const [input, setInput] = useState('');
   const [selectedTrait, setSelectedTrait] = useState<string | null>(null);
@@ -32,30 +38,130 @@ export default function Clarity() {
   const [feltNatural, setFeltNatural] = useState('');
 
   useEffect(() => {
-    // Debounce ML suggestions and merge with starter traits
+    // Debounce ML suggestions and merge with starter traits - use multi-context
     const timer = setTimeout(() => {
-      getSuggestions('traits', input).then((result: SuggestResult) => {
-        setIsThrottled(result.throttled || false);
-        const mlChips = result.items;
-        const starterTraits = gentleMode 
-          ? [
-              { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
-              { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
-              { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
-              { id: 'gentle-present', text: 'More present', source: 'seed' as const },
-              { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
-            ]
-          : [
-              { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
-              { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
-              { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
-              { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
-              { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
-            ];
-        const finalChips = mlChips.length > 0 ? mlChips : starterTraits;
-        setChips(finalChips);
-      }).catch(() => {
-        setIsThrottled(false);
+      const contextBundle = {
+        inspiration: input,
+        working: workingInput,
+        recurringThought: recurringThoughtInput,
+        jealousy: jealousyInput,
+        recentMoment,
+        feltNatural
+      };
+
+      // Check if any context is provided
+      const hasContext = Object.values(contextBundle).some(value => value?.trim());
+
+      if (hasContext && ENABLE_MULTI_CONTEXT) {
+        // Use multi-context suggestions when we have input and feature is enabled
+        const startTime = performance.now();
+        
+        getSuggestionsWithContext('traits', contextBundle, {
+          weights: {
+            inspiration: 0.4,
+            working: 0.2,
+            recurringThought: 0.2,
+            jealousy: 0.2,
+            recentMoment: 0.05,
+            feltNatural: 0.05
+          }
+        }).then((result: SuggestResult) => {
+          const endTime = performance.now();
+          const processingTime = endTime - startTime;
+          
+          setIsThrottled(result.throttled || false);
+          const mlChips = result.items;
+          
+          // Track multi-input usage
+          if (!result.throttled) {
+            trackClarityMultiInputUsed({
+              field_count: getContextFields(contextBundle).length,
+              context_length: calculateContextLength(contextBundle),
+              chip_count: mlChips.length,
+              top_chip_source: mlChips.length > 0 ? mlChips[0].source : 'seed',
+              processing_time: processingTime
+            });
+          }
+          
+          const starterTraits = gentleMode 
+            ? [
+                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
+                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
+                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
+                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
+                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
+              ]
+            : [
+                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
+                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
+                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
+                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
+                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
+              ];
+          const finalChips = mlChips.length > 0 ? mlChips : starterTraits;
+          setChips(finalChips);
+        }).catch(() => {
+          setIsThrottled(false);
+          const starterTraits = gentleMode 
+            ? [
+                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
+                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
+                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
+                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
+                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
+              ]
+            : [
+                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
+                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
+                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
+                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
+                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
+              ];
+          setChips(starterTraits);
+        });
+      } else if (hasContext && !ENABLE_MULTI_CONTEXT && input.trim()) {
+        // Fallback to single-input suggestions when feature flag is disabled but we have inspiration input
+        getSuggestions('traits', input).then((result: SuggestResult) => {
+          setIsThrottled(result.throttled || false);
+          const mlChips = result.items;
+          const starterTraits = gentleMode 
+            ? [
+                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
+                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
+                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
+                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
+                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
+              ]
+            : [
+                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
+                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
+                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
+                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
+                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
+              ];
+          const finalChips = mlChips.length > 0 ? mlChips : starterTraits;
+          setChips(finalChips);
+        }).catch(() => {
+          setIsThrottled(false);
+          const starterTraits = gentleMode 
+            ? [
+                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
+                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
+                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
+                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
+                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
+              ]
+            : [
+                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
+                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
+                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
+                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
+                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
+              ];
+          setChips(starterTraits);
+        });
+      } else {
+        // Show starter traits when no input is provided
         const starterTraits = gentleMode 
           ? [
               { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
@@ -72,10 +178,11 @@ export default function Clarity() {
               { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
             ];
         setChips(starterTraits);
-      });
+        setIsThrottled(false);
+      }
     }, 400);
     return () => clearTimeout(timer);
-  }, [input, gentleMode]);
+  }, [input, workingInput, recurringThoughtInput, jealousyInput, recentMoment, feltNatural, gentleMode]);
 
   useEffect(() => {
     // surface past overlaps as chips (user source)
@@ -140,6 +247,30 @@ export default function Clarity() {
       setUserTraitChips(items);
     });
   }, []);
+
+  // Custom trait selection handler with telemetry
+  function handleTraitSelection(chip: { id: string; text: string; source?: 'seed' | 'user' }, isToggle: boolean = false) {
+    const newSelection = isToggle && selectedTrait === chip.text ? null : chip.text;
+    setSelectedTrait(newSelection);
+
+    // Track trait selection if a trait was actually selected (not deselected)
+    if (newSelection) {
+      const contextBundle = {
+        inspiration: input,
+        working: workingInput,
+        recurringThought: recurringThoughtInput,
+        jealousy: jealousyInput,
+        recentMoment,
+        feltNatural
+      };
+
+      trackClarityTraitSelected({
+        trait_text: newSelection,
+        input_contexts: getContextFields(contextBundle),
+        synonym_matched: checkSynonymMatch(newSelection, contextBundle)
+      });
+    }
+  }
 
   async function save() {
     if (selectedTrait) await addTrait(selectedTrait);
@@ -261,12 +392,12 @@ export default function Clarity() {
         </div>
         <ChipList
           chips={chips}
-          onSelect={(c) => setSelectedTrait((prev) => (prev === c.text ? null : c.text))}
+          onSelect={(c) => handleTraitSelection(c, true)}
         />
         {userTraitChips.length > 0 && (
           <div className="mt-2">
             <p className="text-sm text-ink-600">From you</p>
-            <ChipList chips={userTraitChips} onSelect={(c) => setSelectedTrait(c.text)} />
+            <ChipList chips={userTraitChips} onSelect={(c) => handleTraitSelection(c)} />
           </div>
         )}
         {selectedTrait && (
@@ -363,7 +494,7 @@ export default function Clarity() {
         {relatedTraitChips.length > 0 && (
           <div className="mt-2">
             <p className="text-sm text-ink-600">Related traits (from overlaps)</p>
-            <ChipList chips={relatedTraitChips} onSelect={(c) => setSelectedTrait(c.text)} />
+            <ChipList chips={relatedTraitChips} onSelect={(c) => handleTraitSelection(c)} />
           </div>
         )}
       </div>

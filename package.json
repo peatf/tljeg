@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-  "build": "tsc -b && vite build && node ./scripts/size-check.cjs",
+    "build": "tsc -b && vite build && node ./scripts/size-check.cjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -17,6 +17,7 @@
     "dexie": "^4.0.4",
     "framer-motion": "^11.0.0",
     "idb": "^8.0.0",
+    "jspdf": "^3.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.0",

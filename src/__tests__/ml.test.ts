@@ -23,7 +23,8 @@ vi.mock('@xenova/transformers', () => ({
 }));
 
 // Import after mocking
-import { getSuggestions, ingestUserText, reframeText } from '../ml';
+import { getSuggestions, getSuggestionsWithContext, ingestUserText, reframeText } from '../ml';
+import { aggregateContext, checkSynonymMatch, getContextFields, calculateContextLength } from '../ml/context_aggregator';
 
 describe('ML Module', () => {
   beforeEach(() => {
@@ -102,6 +103,178 @@ describe('ML Module', () => {
         type: 'reframe', 
         text: 'I am terrible at this' 
       });
+    });
+  });
+});
+
+describe('Multi-Context ML Functions', () => {
+  describe('getSuggestionsWithContext', () => {
+    it('should send suggest-multi message with context bundle', () => {
+      const contextBundle = {
+        inspiration: 'I admire my partners positivity',
+        working: 'I stayed calm during the meeting',
+        recurringThought: 'I keep thinking about being more patient'
+      };
+
+      getSuggestionsWithContext('traits', contextBundle);
+      
+      // Signal ready first
+      // @ts-expect-error
+      mockWorker.onmessage?.({ data: { type: 'ready' } });
+      
+      // Verify the message was posted (should be the latest call)
+      expect(mockWorker.postMessage).toHaveBeenLastCalledWith({ 
+        type: 'suggest-multi', 
+        domain: 'traits', 
+        context: contextBundle,
+        options: { weights: expect.any(Object) }
+      });
+    });
+
+    it('should use custom weights when provided', () => {
+      const contextBundle = { inspiration: 'test' };
+      const customWeights = { inspiration: 1.0, working: 0 };
+
+      getSuggestionsWithContext('traits', contextBundle, { weights: customWeights });
+      
+      // Signal ready first
+      // @ts-expect-error
+      mockWorker.onmessage?.({ data: { type: 'ready' } });
+      
+      // Verify the message was posted with custom weights (should be the latest call)
+      expect(mockWorker.postMessage).toHaveBeenLastCalledWith({ 
+        type: 'suggest-multi', 
+        domain: 'traits', 
+        context: contextBundle,
+        options: { weights: customWeights }
+      });
+    });
+  });
+});
+
+describe('Context Aggregator Functions', () => {
+  describe('aggregateContext', () => {
+    it('should aggregate context with default weights', () => {
+      const context = {
+        inspiration: 'positive energy',
+        working: 'staying calm',
+        recurringThought: 'be patient'
+      };
+
+      const result = aggregateContext(context);
+      
+      // Should repeat inspiration 4 times (0.4 * 10 = 4)
+      expect(result).toContain('positive energy');
+      // Should repeat working 2 times (0.2 * 10 = 2)  
+      expect(result).toContain('staying calm');
+      // Should repeat recurringThought 2 times (0.2 * 10 = 2)
+      expect(result).toContain('be patient');
+    });
+
+    it('should handle empty context values', () => {
+      const context = {
+        inspiration: 'test',
+        working: '',
+        recurringThought: undefined
+      };
+
+      const result = aggregateContext(context);
+      expect(result).toContain('test');
+      expect(result).not.toContain('working');
+      expect(result).not.toContain('recurringThought');
+    });
+
+    it('should use custom weights', () => {
+      const context = { inspiration: 'test' };
+      const weights = { inspiration: 1.0 };
+
+      const result = aggregateContext(context, weights);
+      
+      // Should repeat 10 times (1.0 * 10 = 10)
+      const occurrences = (result.match(/test/g) || []).length;
+      expect(occurrences).toBe(10);
+    });
+  });
+
+  describe('checkSynonymMatch', () => {
+    it('should match direct synonyms', () => {
+      const context = { inspiration: 'I want to be more upbeat and hopeful' };
+      
+      const result = checkSynonymMatch('positive', context);
+      expect(result).toBe(true);
+    });
+
+    it('should match canonical forms', () => {
+      const context = { working: 'I was optimistic during the call' };
+      
+      const result = checkSynonymMatch('positive', context);
+      expect(result).toBe(true);
+    });
+
+    it('should match aliases', () => {
+      const context = { jealousy: 'I admire their positivity' };
+      
+      const result = checkSynonymMatch('positive', context);
+      expect(result).toBe(true);
+    });
+
+    it('should return false for no matches', () => {
+      const context = { inspiration: 'I want to be different' };
+      
+      const result = checkSynonymMatch('positive', context);
+      expect(result).toBe(false);
+    });
+
+    it('should return false for unknown traits', () => {
+      const context = { inspiration: 'amazing energy' };
+      
+      const result = checkSynonymMatch('unknown-trait', context);
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getContextFields', () => {
+    it('should return only filled fields', () => {
+      const context = {
+        inspiration: 'test',
+        working: '',
+        recurringThought: 'another test',
+        jealousy: undefined
+      };
+
+      const result = getContextFields(context);
+      expect(result).toEqual(['inspiration', 'recurringThought']);
+    });
+
+    it('should return empty array for empty context', () => {
+      const context = { inspiration: '', working: undefined };
+
+      const result = getContextFields(context);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('calculateContextLength', () => {
+    it('should calculate total context length', () => {
+      const context = {
+        inspiration: 'hello',     // 5 chars
+        working: 'world',         // 5 chars
+        recurringThought: 'test'  // 4 chars
+      };
+
+      const result = calculateContextLength(context);
+      expect(result).toBe(16); // 5 + 1 + 5 + 1 + 4 = 16 (includes spaces)
+    });
+
+    it('should ignore empty values', () => {
+      const context = {
+        inspiration: 'hello',
+        working: '',
+        recurringThought: undefined
+      };
+
+      const result = calculateContextLength(context);
+      expect(result).toBe(5);
     });
   });
 });

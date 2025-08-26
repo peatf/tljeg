@@ -1,0 +1,70 @@
+{
+  "traits": {
+    "positive": {
+      "canonical": "positive",
+      "synonyms": ["optimistic", "upbeat", "hopeful", "cheerful", "sunny", "bright"],
+      "aliases": ["positivity", "positiveness"]
+    },
+    "optimistic": {
+      "canonical": "positive",
+      "synonyms": ["hopeful", "confident", "rosy", "sanguine"],
+      "aliases": ["optimism"]
+    },
+    "steady": {
+      "canonical": "steady",
+      "synonyms": ["stable", "consistent", "reliable", "constant"],
+      "aliases": ["steadiness"]
+    },
+    "curious": {
+      "canonical": "curious",
+      "synonyms": ["inquisitive", "interested", "eager", "nosy"],
+      "aliases": ["curiosity"]
+    },
+    "clear": {
+      "canonical": "clear",
+      "synonyms": ["lucid", "transparent", "obvious", "distinct"],
+      "aliases": ["clarity"]
+    },
+    "tender": {
+      "canonical": "tender",
+      "synonyms": ["gentle", "soft", "caring", "loving"],
+      "aliases": ["tenderness"]
+    },
+    "focused": {
+      "canonical": "focused",
+      "synonyms": ["concentrated", "attentive", "intent", "fixed"],
+      "aliases": ["focus"]
+    },
+    "playful": {
+      "canonical": "playful",
+      "synonyms": ["fun", "mischievous", "lighthearted", "joyful"],
+      "aliases": ["playfulness"]
+    },
+    "patient": {
+      "canonical": "patient",
+      "synonyms": ["tolerant", "understanding", "calm", "composed"],
+      "aliases": ["patience"]
+    },
+    "bold": {
+      "canonical": "bold",
+      "synonyms": ["brave", "daring", "courageous", "fearless"],
+      "aliases": ["boldness"]
+    },
+    "gentle": {
+      "canonical": "gentle",
+      "synonyms": ["soft", "mild", "kind", "tender"],
+      "aliases": ["gentleness"]
+    },
+    "grounded": {
+      "canonical": "grounded",
+      "synonyms": ["centered", "balanced", "stable", "practical"],
+      "aliases": ["grounding"]
+    }
+  },
+  "negative_terms": [
+    "scrolling", "overcommit", "clutter", "late nights", "self-critique",
+    "procrastination", "overthinking", "rushing", "avoidance", "perfectionism",
+    "distraction", "overwhelm", "anxiety", "stress", "worry", "fear",
+    "doubt", "impatience", "anger", "frustration", "burnout", "exhaustion"
+  ]
+}

@@ -1,8 +1,11 @@
 import { loadAllEmbeddings, saveEmbedding } from '../storage/embeddings';
+import { ContextBundle, ContextWeights, DEFAULT_CONTEXT_WEIGHTS, aggregateContext, getContextFields, calculateContextLength } from './context_aggregator';
 
 export type SuggestDomain = 'needs' | 'traits' | 'contexts' | 'frictions';
 export type Chip = { id: string; text: string; source: 'seed' | 'user'; method?: 'embedding' | 'fuzzy' };
 export type SuggestResult = { items: Chip[]; throttled?: boolean };
+
+export type { ContextBundle, ContextWeights } from './context_aggregator';
 
 let worker: Worker | null = null;
 let ready = false;
@@ -68,6 +71,62 @@ async function ensureWorker() {
 async function waitReady() {
   if (ready) return;
   await new Promise<void>((res) => waiters.push(res));
+}
+
+export async function getSuggestionsWithContext(
+  domain: SuggestDomain,
+  context: ContextBundle,
+  options?: { weights?: ContextWeights }
+): Promise<SuggestResult> {
+  try {
+    await ensureWorker();
+    await waitReady();
+    
+    if (!rateLimitOk()) {
+      const items = lastSuggestions[domain] || [];
+      return Promise.resolve({ items, throttled: true });
+    }
+    
+    if (!worker) {
+      console.warn('Worker not available, returning empty suggestions');
+      return Promise.resolve({ items: [] });
+    }
+    
+    const weights = options?.weights || DEFAULT_CONTEXT_WEIGHTS;
+    
+    return new Promise((resolve) => {
+      const onMessage = (e: MessageEvent) => {
+        if (e.data?.type === 'suggest-multi') {
+          worker?.removeEventListener('message', onMessage as any);
+          const items = e.data.items;
+          lastSuggestions[domain] = items;
+          resolve({ items });
+        }
+      };
+      
+      const timeout = setTimeout(() => {
+        worker?.removeEventListener('message', onMessage as any);
+        console.warn('Worker multi-context suggestion request timed out');
+        resolve({ items: [] });
+      }, 10000);
+      
+      const onMessageWithTimeout = (e: MessageEvent) => {
+        clearTimeout(timeout);
+        onMessage(e);
+      };
+      
+      worker.addEventListener('message', onMessageWithTimeout as any);
+      worker.postMessage({ 
+        type: 'suggest-multi', 
+        domain, 
+        context,
+        options: { weights }
+      });
+    });
+  } catch (error) {
+    console.error('Error in getSuggestionsWithContext:', error);
+    return Promise.resolve({ items: [] });
+  }
 }
 
 export async function getSuggestions(domain: SuggestDomain, text?: string): Promise<SuggestResult> {
