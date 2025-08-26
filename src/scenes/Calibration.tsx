@@ -13,6 +13,7 @@ export default function Calibration() {
   
   const [proof, setProof] = useState('');
   const [rehearsalContext, setRehearsalContext] = useState('');
+  const [rehearsalCustom, setRehearsalCustom] = useState('');
   const [friction, setFriction] = useState('');
   const [proofEntries, setProofEntries] = useState<any[]>([]);
   const [rehearsalEntries, setRehearsalEntries] = useState<any[]>([]);
@@ -110,9 +111,10 @@ export default function Calibration() {
   }
 
   async function saveRehearsal() {
-    if (!rehearsalContext.trim() || !hasProof) return;
+    const text = rehearsalContext === 'custom' ? rehearsalCustom : rehearsalContext;
+    if (!text.trim() || !hasProof) return;
     
-    await addContext(rehearsalContext, 'rehearsal', latestTrait ?? undefined);
+    await addContext(text, 'rehearsal', latestTrait ?? undefined);
     
     try {
       await ingestUserText('contexts', rehearsalContext);
@@ -121,6 +123,7 @@ export default function Calibration() {
     }
     
     setRehearsalContext('');
+    setRehearsalCustom('');
     await loadEntries();
     setStatus('Saved rehearsal.');
     setTimeout(() => setStatus(''), 1500);
@@ -268,7 +271,8 @@ export default function Calibration() {
           <InputPanel
             label="CUSTOM CONTEXT"
             placeholder="Describe your custom context..."
-            onChange={(e) => setRehearsalContext((e.target as HTMLInputElement).value)}
+            value={rehearsalCustom}
+            onChange={(e) => setRehearsalCustom((e.target as HTMLInputElement).value)}
             aria-label="Custom context input"
           />
         )}
@@ -276,7 +280,7 @@ export default function Calibration() {
           <StackedButton
             className="rect-btn--sm"
             onClick={saveRehearsal}
-            disabled={!hasProof || !rehearsalContext.trim()}
+            disabled={!hasProof || !((rehearsalContext === 'custom' ? rehearsalCustom : rehearsalContext).trim())}
             aria-label="Save rehearsal"
           >
             SAVE REHEARSAL
@@ -284,7 +288,7 @@ export default function Calibration() {
           <button 
             className="px-4 py-2 border rounded" 
             onClick={() => setRehearse(true)}
-            disabled={!hasProof || !rehearsalContext.trim()}
+            disabled={!hasProof || !((rehearsalContext === 'custom' ? rehearsalCustom : rehearsalContext).trim())}
             aria-label="Start 60 second rehearsal"
           >
             Start 60s

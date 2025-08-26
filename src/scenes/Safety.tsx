@@ -3,7 +3,7 @@ import Timer from '../components/Timer';
 import SafetyIllustration from '../assets/safety.svg?react';
 import avatarWebp from '../assets/avatar.webp';
 import { ChipList } from '../components/Chips';
-import { addEntry } from '../storage/storage';
+import { addEntry, listEntries } from '../storage/storage';
 import { getSuggestions } from '../ml';
 import StackedButton from '../components/ui/StackedButton';
 import InputPanel from '../components/ui/InputPanel';
@@ -28,6 +28,24 @@ export default function Safety() {
   useEffect(() => {
     getSuggestions('needs', needsText).then(result => setChips(result.items)).catch(() => setChips([]));
   }, [needsText]);
+
+  // Prefill last saved Safety entry so content persists on return
+  useEffect(() => {
+    (async () => {
+      try {
+        const entries = await listEntries('safety');
+        if (!entries || entries.length === 0) return;
+        const last = entries.reduce((a: any, b: any) => (a.timestamp > b.timestamp ? a : b));
+        const c = last.content || {};
+        if (typeof c.bodyReflection === 'string') setBodyReflection(c.bodyReflection);
+        if (typeof c.consent === 'string') setConsent(c.consent);
+        if (Array.isArray(c.env)) setEnv(c.env);
+        if (typeof c.needsText === 'string') setNeedsText(c.needsText);
+        if (typeof c.partName === 'string') setPartName(c.partName);
+        if (typeof c.partNeed === 'string') setPartNeed(c.partNeed);
+      } catch {}
+    })();
+  }, []);
 
   // Rotating scan cues during 30s timer
   useEffect(() => {

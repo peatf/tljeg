@@ -11,7 +11,7 @@ import InputPanel from '../components/ui/InputPanel';
 export default function Clarity() {
   const [searchParams] = useSearchParams();
   const gentleMode = searchParams.get('mode') === 'gentle';
-  
+
   const [input, setInput] = useState('');
   const [selectedTrait, setSelectedTrait] = useState<string | null>(null);
   const [chips, setChips] = useState<{ id: string; text: string; source: 'seed' | 'user' }[]>([]);
@@ -23,6 +23,13 @@ export default function Clarity() {
   const [relatedTraitChips, setRelatedTraitChips] = useState<{ id: string; text: string; source: 'user' }[]>([]);
   const [status, setStatus] = useState('');
   const prefersReduced = useReducedMotion();
+
+  // Additional state variables for disconnected input fields
+  const [workingInput, setWorkingInput] = useState('');
+  const [recurringThoughtInput, setRecurringThoughtInput] = useState('');
+  const [jealousyInput, setJealousyInput] = useState('');
+  const [recentMoment, setRecentMoment] = useState('');
+  const [feltNatural, setFeltNatural] = useState('');
 
   useEffect(() => {
     // Debounce ML suggestions and merge with starter traits
@@ -84,6 +91,26 @@ export default function Clarity() {
     });
   }, []);
 
+  // Prefill last saved Clarity entry so content persists on return
+  useEffect(() => {
+    (async () => {
+      try {
+        const arr = await listEntries('clarity');
+        if (!arr || arr.length === 0) return;
+        const last = arr.reduce((a: any, b: any) => (a.timestamp > b.timestamp ? a : b));
+        const c = last.content || {};
+        if (typeof c.input === 'string') setInput(c.input);
+        if (typeof c.selectedTrait === 'string' || c.selectedTrait === null) setSelectedTrait(c.selectedTrait ?? null);
+        if (typeof c.overlap === 'string') setOverlap(c.overlap);
+        if (typeof c.working === 'string') setWorkingInput(c.working);
+        if (typeof c.recurringThought === 'string') setRecurringThoughtInput(c.recurringThought);
+        if (typeof c.jealousy === 'string') setJealousyInput(c.jealousy);
+        if (typeof c.recentMoment === 'string') setRecentMoment(c.recentMoment);
+        if (typeof c.feltNatural === 'string') setFeltNatural(c.feltNatural);
+      } catch {}
+    })();
+  }, []);
+
   // Related traits via simple co-occurrence with overlaps
   useEffect(() => {
     listEntries('clarity').then((arr) => {
@@ -116,8 +143,17 @@ export default function Clarity() {
 
   async function save() {
     if (selectedTrait) await addTrait(selectedTrait);
-    await addEntry('clarity', { input, selectedTrait, overlap });
-    
+    await addEntry('clarity', {
+      input,
+      selectedTrait,
+      overlap,
+      working: workingInput,
+      recurringThought: recurringThoughtInput,
+      jealousy: jealousyInput,
+      recentMoment,
+      feltNatural
+    });
+
     // Ingest selected trait for future ML suggestions
     if (selectedTrait) {
       try {
@@ -126,7 +162,7 @@ export default function Clarity() {
         console.error('Failed to ingest trait:', error);
       }
     }
-    
+
     setStatus('Saved.');
     setTimeout(() => setStatus(''), 1500);
   }
@@ -172,6 +208,8 @@ export default function Clarity() {
               as="textarea"
               label="WHAT'S WORKING?"
               id="working"
+              value={workingInput}
+              onChange={(e) => setWorkingInput((e.target as HTMLTextAreaElement).value)}
               placeholder="e.g., I noticed I spoke more slowly and felt grounded on my call today."
               aria-label="What's working"
             />
@@ -187,6 +225,8 @@ export default function Clarity() {
             <InputPanel
               as="textarea"
               label="RECURRING THOUGHT"
+              value={recurringThoughtInput}
+              onChange={(e) => setRecurringThoughtInput((e.target as HTMLTextAreaElement).value)}
               placeholder="Describe the recurring thought and what it's trying to show you..."
               aria-label="Recurring thought input"
             />
@@ -202,6 +242,8 @@ export default function Clarity() {
             <InputPanel
               as="textarea"
               label="JEALOUSY SIGNAL"
+              value={jealousyInput}
+              onChange={(e) => setJealousyInput((e.target as HTMLTextAreaElement).value)}
               placeholder="Write about the jealousy and what it reveals..."
               aria-label="Jealousy insight input"
             />
@@ -277,6 +319,8 @@ export default function Clarity() {
             <InputPanel
               as="textarea"
               label="RECENT MOMENT"
+              value={recentMoment}
+              onChange={(e) => setRecentMoment((e.target as HTMLTextAreaElement).value)}
               placeholder="e.g., I stayed calm during that difficult phone call..."
             />
           </div>
@@ -287,6 +331,8 @@ export default function Clarity() {
             <InputPanel
               as="textarea"
               label="WHAT FELT NATURAL?"
+              value={feltNatural}
+              onChange={(e) => setFeltNatural((e.target as HTMLTextAreaElement).value)}
               placeholder="e.g., My breathing stayed steady, I listened without rushing to respond..."
             />
           </div>
