@@ -113,14 +113,16 @@ export default defineConfig({
       compress: {
         drop_console: true,
         drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
+        passes: 3
       },
       format: {
         comments: false,
       },
       mangle: {
         // Keep property names for compatibility
-        properties: false
+        properties: false,
+        safari10: true
       }
     },
     sourcemap: false, // Disable public sourcemaps
@@ -137,4 +139,3 @@ export default defineConfig({
     }
   }
 });
-
