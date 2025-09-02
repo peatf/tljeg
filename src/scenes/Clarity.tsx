@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
+import TimerButton from '../components/TimerButton';
+import DefinitionPopover from '../components/DefinitionPopover';
+import StepTracker from '../components/StepTracker';
+import SaveBanner from '../components/SaveBanner';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChipList } from '../components/Chips';
 import { addEntry, addTrait, listEntries, listTraits } from '../storage/storage';
@@ -9,6 +13,8 @@ import { trackClarityMultiInputUsed, trackClarityTraitSelected } from '../lib/an
 import { getContextFields, calculateContextLength, checkSynonymMatch } from '../ml/context_aggregator';
 import StackedButton from '../components/ui/StackedButton';
 import InputPanel from '../components/ui/InputPanel';
+import MobileActions from '../components/MobileActions';
+import { loadAutosave, useAutosaveForm } from '../hooks/useAutosaveForm';
 
 export default function Clarity() {
   const [searchParams] = useSearchParams();
@@ -28,6 +34,7 @@ export default function Clarity() {
   const [userTraitChips, setUserTraitChips] = useState<{ id: string; text: string; source: 'user' }[]>([]);
   const [relatedTraitChips, setRelatedTraitChips] = useState<{ id: string; text: string; source: 'user' }[]>([]);
   const [status, setStatus] = useState('');
+  const [justSaved, setJustSaved] = useState(false);
   const prefersReduced = useReducedMotion();
 
   // Additional state variables for disconnected input fields
@@ -198,6 +205,9 @@ export default function Clarity() {
     });
   }, []);
 
+  // Autosave draft locally for resilience
+  useAutosaveForm('clarity', { input, selectedTrait, overlap, working: workingInput, recurringThought: recurringThoughtInput, jealousy: jealousyInput, recentMoment, feltNatural });
+
   // Prefill last saved Clarity entry so content persists on return
   useEffect(() => {
     (async () => {
@@ -214,6 +224,20 @@ export default function Clarity() {
         if (typeof c.jealousy === 'string') setJealousyInput(c.jealousy);
         if (typeof c.recentMoment === 'string') setRecentMoment(c.recentMoment);
         if (typeof c.feltNatural === 'string') setFeltNatural(c.feltNatural);
+      } catch {}
+      // Fallback: restore unsaved draft from localStorage autosave
+      try {
+        const draft = loadAutosave<any>('clarity');
+        if (draft) {
+          if (typeof draft.input === 'string') setInput(draft.input);
+          if (typeof draft.selectedTrait === 'string' || draft.selectedTrait === null) setSelectedTrait(draft.selectedTrait ?? null);
+          if (typeof draft.overlap === 'string') setOverlap(draft.overlap);
+          if (typeof draft.working === 'string') setWorkingInput(draft.working);
+          if (typeof draft.recurringThought === 'string') setRecurringThoughtInput(draft.recurringThought);
+          if (typeof draft.jealousy === 'string') setJealousyInput(draft.jealousy);
+          if (typeof draft.recentMoment === 'string') setRecentMoment(draft.recentMoment);
+          if (typeof draft.feltNatural === 'string') setFeltNatural(draft.feltNatural);
+        }
       } catch {}
     })();
   }, []);
@@ -295,11 +319,15 @@ export default function Clarity() {
     }
 
     setStatus('Saved.');
+    setJustSaved(true);
+    // Prefetch next scene
+    try { (await import('../utils/prefetch')).prefetchScene('calibration'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
   return (
     <section className="grid gap-6">
+      <StepTracker current="clarity" />
       <header className="grid gap-2">
   <h1 className="text-2xl font-bold doto-base doto-700">Clarity{gentleMode ? ' (Gentle Mode)' : ''}</h1>
         <p className="text-ink-700 text-sm">Clarity means uncovering the identity shift that calls you. This can surface from desire, tension, or even envy.</p>
@@ -308,11 +336,17 @@ export default function Clarity() {
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>
       </header>
-      <div className="grid gap-4">
+      <nav className="text-sm flex gap-3 flex-wrap" aria-label="Quick jump">
+        <a href="#entry" className="underline">Entry Points</a>
+        <a href="#traits" className="underline">Choose Trait</a>
+        <a href="#overlap" className="underline">Find Overlap</a>
+      </nav>
+
+      <div id="entry" className="grid gap-4">
         <h2 className="font-semibold text-lg">Entry Points</h2>
         
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50">
+          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
             <span className="font-medium">What inspires you?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
@@ -330,7 +364,7 @@ export default function Clarity() {
         </details>
 
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50">
+          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
             <span className="font-medium">What's working?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
@@ -348,7 +382,7 @@ export default function Clarity() {
         </details>
 
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50">
+          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
             <span className="font-medium">What recurring thought keeps showing up?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
@@ -365,7 +399,7 @@ export default function Clarity() {
         </details>
 
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50">
+          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
             <span className="font-medium">Who triggers a spark of jealousy?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
@@ -381,7 +415,7 @@ export default function Clarity() {
           </div>
         </details>
       </div>
-      <div>
+      <div id="traits">
         <div className="flex items-center gap-2 mb-2">
           <p className="text-sm text-ink-600">Tap a trait chip to choose one.</p>
           {isThrottled && (
@@ -415,16 +449,9 @@ export default function Clarity() {
             Now, notice where this trait is already alive in you. This overlap turns clarity into proof.
           </div>
         )}
-        <button
-          className="px-4 py-2 border rounded"
-          onClick={() => setRehearsing(true)}
-          aria-label="Start 45 second rehearsal"
-        >
-          Start 45s rehearsal
-        </button>
+        <TimerButton duration={45} label="Start 45-second rehearsal" onStart={() => setRehearsing(true)} onDone={() => setRehearsing(false)} />
         {rehearsing && (
-          <div className="grid gap-3 place-items-center">
-            <Timer seconds={45} label="45 second rehearsal" onDone={() => setRehearsing(false)} />
+          <div className="grid gap-3 place-items-center" aria-live="polite">
             {prefersReduced ? (
               <div className="w-24 h-24 rounded-full border-2 border-ink-600" aria-hidden />
             ) : (
@@ -440,8 +467,8 @@ export default function Clarity() {
         )}
       </div>
 
-      <div className="grid gap-4">
-        <h3 className="font-semibold">Find Your Overlap</h3>
+      <div id="overlap" className="grid gap-4">
+        <h3 className="font-semibold">Find Your Overlap <DefinitionPopover term="Overlap">A moment you already lived the new trait. Proof that it’s already alive in you.</DefinitionPopover></h3>
         
         <div className="grid gap-3">
           <div>
@@ -502,7 +529,16 @@ export default function Clarity() {
       <div className="flex gap-3">
         <StackedButton className="rect-btn--sm" onClick={save} aria-label="Save clarity note">SAVE</StackedButton>
       </div>
-      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
+      <MobileActions onSave={save} continueHref="/artifact/calibration" continueLabel="Continue to Calibration" />
+      {justSaved ? (
+        <SaveBanner
+          nextHref="/artifact/calibration"
+          nextLabel="Continue to Calibration"
+          onClose={() => setJustSaved(false)}
+        />
+      ) : (
+        status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>
+      )}
     </section>
   );
 }

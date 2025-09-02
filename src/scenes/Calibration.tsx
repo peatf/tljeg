@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
+import StepTracker from '../components/StepTracker';
 import { addContext, listContexts, deleteContext, listEntries } from '../storage/storage';
 import { ingestUserText } from '../ml';
 import StackedButton from '../components/ui/StackedButton';
 import InputPanel from '../components/ui/InputPanel';
+import { prefetchScene } from '../utils/prefetch';
 
 export default function Calibration() {
   const [searchParams] = useSearchParams();
@@ -107,6 +109,7 @@ export default function Calibration() {
     setProof('');
     await loadEntries();
     setStatus('Saved proof.');
+    try { prefetchScene('void'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
@@ -126,6 +129,7 @@ export default function Calibration() {
     setRehearsalCustom('');
     await loadEntries();
     setStatus('Saved rehearsal.');
+    try { prefetchScene('void'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
@@ -144,11 +148,13 @@ export default function Calibration() {
     setFriction('');
     await loadEntries();
     setStatus('Saved friction.');
+    try { prefetchScene('void'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
   return (
     <section className="grid gap-6">
+      <StepTracker current="calibration" />
       {preloadedOverlap && (
         <div className="p-3 border rounded bg-bone-50 text-sm text-ink-800" aria-live="polite">
           From Clarity: “{preloadedOverlap}”

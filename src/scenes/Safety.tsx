@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Timer from '../components/Timer';
+import StepTracker from '../components/StepTracker';
+import SaveBanner from '../components/SaveBanner';
 import SafetyIllustration from '../assets/safety.svg?react';
 import avatarWebp from '../assets/avatar.webp';
 import { ChipList } from '../components/Chips';
@@ -7,6 +9,11 @@ import { addEntry, listEntries } from '../storage/storage';
 import { getSuggestions } from '../ml';
 import StackedButton from '../components/ui/StackedButton';
 import InputPanel from '../components/ui/InputPanel';
+import MobileActions from '../components/MobileActions';
+import { loadAutosave, useAutosaveForm } from '../hooks/useAutosaveForm';
+import TimerButton from '../components/TimerButton';
+import DefinitionPopover from '../components/DefinitionPopover';
+import { prefetchScene } from '../utils/prefetch';
 
 export default function Safety() {
   const [consent, setConsent] = useState('');
@@ -18,6 +25,7 @@ export default function Safety() {
   const [partName, setPartName] = useState('');
   const [partNeed, setPartNeed] = useState('');
   const [status, setStatus] = useState('');
+  const [justSaved, setJustSaved] = useState(false);
   const [bodyReflection, setBodyReflection] = useState('');
   const [customEnv, setCustomEnv] = useState('');
   const [currentScanCue, setCurrentScanCue] = useState(0);
@@ -44,6 +52,18 @@ export default function Safety() {
         if (typeof c.partName === 'string') setPartName(c.partName);
         if (typeof c.partNeed === 'string') setPartNeed(c.partNeed);
       } catch {}
+      // Fallback: restore unsaved draft from localStorage autosave
+      try {
+        const draft = loadAutosave<any>('safety');
+        if (draft) {
+          if (typeof draft.bodyReflection === 'string') setBodyReflection(draft.bodyReflection);
+          if (typeof draft.consent === 'string') setConsent(draft.consent);
+          if (Array.isArray(draft.env)) setEnv(draft.env);
+          if (typeof draft.needsText === 'string') setNeedsText(draft.needsText);
+          if (typeof draft.partName === 'string') setPartName(draft.partName);
+          if (typeof draft.partNeed === 'string') setPartNeed(draft.partNeed);
+        }
+      } catch {}
     })();
   }, []);
 
@@ -63,6 +83,9 @@ export default function Safety() {
     return () => clearInterval(interval);
   }, [scanStarted]);
 
+  // Autosave draft locally for resilience
+  useAutosaveForm('safety', { bodyReflection, consent, env, needsText, partName, partNeed });
+
   async function save() {
     setLoading(true);
     try {
@@ -79,6 +102,9 @@ export default function Safety() {
         }
       }
       setStatus('Saved.');
+      setJustSaved(true);
+      // Prefetch next scene assets for snappier navigation
+      prefetchScene('clarity');
       setTimeout(() => setStatus(''), 1500);
     } finally {
       setLoading(false);
@@ -87,6 +113,7 @@ export default function Safety() {
 
   return (
     <section className="grid gap-6">
+      <StepTracker current="safety" />
       <header className="grid gap-2">
   <h1 className="text-2xl font-bold doto-base doto-700">Safety</h1>
         <p className="text-ink-700 text-sm">Shifts only land if they feel safe. Begin by grounding in internal safety.</p>
@@ -112,7 +139,9 @@ export default function Safety() {
           helperText="Required before moving on. A brief body read helps set a safe pace."
         />
       </div>
-      <p className="text-ink-700 max-w-prose">After a quick body read, continue below. If any part says “not yet,” name its need.</p>
+      <p className="text-ink-700 max-w-prose">After a quick body read, continue below. If any part says “not yet,” name its need.
+        <DefinitionPopover term="Friction">A removable obstacle that makes a desired state harder. Example: Put phone in another room at bedtime.</DefinitionPopover>
+      </p>
 
       {/* The rest of the flow is gated until a body read exists */}
       <div className={`${hasBodyRead ? '' : 'opacity-60 pointer-events-none select-none'} grid gap-3`} aria-disabled={!hasBodyRead}>
@@ -166,30 +195,14 @@ export default function Safety() {
           <p id="consent-hint" className="text-xs text-ink-600">If "not yet," consider what is needed before proceeding.</p>
         </div>
         <div className="grid gap-3">
-          <button
-            className="px-4 py-2 border border-bone-500 rounded"
-          onClick={() => setScanStarted(true)}
-            aria-label="Start 30 second scan"
-            disabled={!hasBodyRead}
-          >
-            Start 30s scan
-          </button>
-          {scanStarted && (
-            <div className="grid gap-3">
-              <Timer
-                seconds={30}
-                label="30 second scan"
-                onDone={() => {
-                  if (!doneRef.current) {
-                    doneRef.current = true;
-                  }
-                }}
-              />
+          <div className="grid gap-3">
+            <TimerButton duration={30} label="Start 30-second scan" onStart={() => setScanStarted(true)} onDone={() => { doneRef.current = true; setScanStarted(false); }} />
+            {scanStarted && (
               <div className="text-center p-3 bg-blue-50 rounded-lg text-blue-800 text-sm italic" aria-live="polite">
                 {["Notice your breath...", "Feel your feet on the ground...", "Check in with your shoulders...", "Sense the space around you...", "Listen to what your body needs..."][currentScanCue]}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="grid gap-2">
@@ -266,13 +279,37 @@ export default function Safety() {
           </div>
         )}
       </div>
+      {useAutosaveForm('safety', { bodyReflection, consent, env, needsText, partName, partNeed }), null}
       {/* Save remains at the bottom; disabled until body read is entered */}
       <div className="flex gap-3">
         <StackedButton className="rect-btn--sm" onClick={save} disabled={loading || !hasBodyRead || !hasNeedWhenNotYet} aria-label="Save safety note">
           {loading ? 'SAVING…' : 'SAVE'}
         </StackedButton>
+        <button
+          className="px-3 py-2 border rounded"
+          onClick={() => {
+            // Jump to next required
+            const body = document.getElementById('body-reflection');
+            if (!hasBodyRead && body) body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else if (consent === 'not yet') {
+              const needs = document.getElementById('consent-reason');
+              if (needs) needs.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }}
+        >
+          Jump to Next Required
+        </button>
       </div>
-      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
+      <MobileActions onSave={save} continueHref="/artifact/clarity" continueLabel="Continue to Clarity" disabled={loading || !hasBodyRead || !hasNeedWhenNotYet} />
+      {justSaved ? (
+        <SaveBanner
+          nextHref="/artifact/clarity"
+          nextLabel="Continue to Clarity"
+          onClose={() => setJustSaved(false)}
+        />
+      ) : (
+        status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>
+      )}
     </section>
   );
 }

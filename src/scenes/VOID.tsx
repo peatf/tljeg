@@ -5,6 +5,7 @@ import BreathingIllustration from '../assets/breathing.svg?react';
 import voidWebp from '../assets/VOID_1.webp';
 import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
+import StepTracker from '../components/StepTracker';
 import { addEntry } from '../storage/storage';
 import DissolveWord from '../components/DissolveWord';
 import { useReducedMotionPref } from '../hooks/useReducedMotionPref';
@@ -232,9 +233,10 @@ export default function VOIDScene() {
   }
 
   if (state === 'enter_labels') {
-    return (
-      <section className="grid gap-6">
-        <header className="grid gap-2">
+  return (
+    <section className="grid gap-6">
+      <StepTracker current="void" />
+      <header className="grid gap-2">
           <h1 className="text-2xl font-bold doto-base doto-700">VOID{autostart ? ' (Quick Start)' : ''}</h1>
           <p className="text-ink-700 text-sm">{autostart ? 'Ready to dissolve. Add your labels and begin.' : 'VOID is a shower. VOID is the dissolve. Labels melt here, good or bad, success or failure, they soften until they disappear. Neutrality creates breathing room. Your being relaxes, no longer defending or rejecting a label. And in that emptiness, possibility pulls you forward. VOID is powerful because when you let go, space opens. And because desire is magnetic space naturally calls in the new identity you\'ve been clarifying and calibrating.'}</p>
         </header>

@@ -58,6 +58,23 @@ body::before {
 /* Ensure app content paints above the fixed background layer */
 #root { position: relative; z-index: 1; }
 
+/* Minimum touch target helper */
+.touch-target { min-height: 44px; min-width: 44px; }
+
+/* High-contrast theme baseline tweaks */
+html[data-theme="hc"] body { color: #0a0a0a; background: #fff; }
+html[data-theme="hc"] a, html[data-theme="hc"] button { border-color: #111827 !important; }
+html[data-theme="hc"] :focus-visible { outline: 3px solid #111827 !important; outline-offset: 2px; }
+
+/* Text scale controls */
+html[data-text-scale="112"] { font-size: 112%; }
+html[data-text-scale="125"] { font-size: 125%; }
+
+/* Reduced motion helpers */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { addReleaseNote, addRuntimeSpec, listReleaseNotes, listRuntimeSpecs, deleteReleaseNote, updateRuntimeSpecMicroActs, listEntries, listContexts } from '../storage/storage';
 import { getSuggestions, type SuggestResult } from '../ml';
 import Timer from '../components/Timer';
+import StepTracker from '../components/StepTracker';
 import { makeIcsEvent } from '../storage/export';
 import StackedButton from '../components/ui/StackedButton';
 import InputPanel from '../components/ui/InputPanel';
+import DefinitionPopover from '../components/DefinitionPopover';
 
 export default function Implementation() {
   const [label, setLabel] = useState('');
@@ -335,6 +337,7 @@ export default function Implementation() {
 
   return (
     <section className="grid gap-6">
+      <StepTracker current="implementation" />
       <header className="grid gap-2">
   <h1 className="text-2xl font-bold doto-base doto-700">Implementation</h1>
         <p className="text-ink-700 text-sm">The actions you take are reflection of who you are.</p>
@@ -364,7 +367,7 @@ export default function Implementation() {
           placeholder="Calm, Honesty, Patience…"
         />
 
-        <p className="text-xs text-ink-600">List 1–2 small, concrete actions that express this principle. (e.g., Pause before replying, Put phone in drawer at dinner).</p>
+        <p className="text-xs text-ink-600">List 1–2 small, concrete actions that express this principle. (e.g., Pause before replying, Put phone in drawer at dinner). <DefinitionPopover term="Micro‑act">A tiny behavior that expresses your principle in ordinary moments.</DefinitionPopover></p>
         <InputPanel
           label="MICRO-ACT 1"
           id="micro1"

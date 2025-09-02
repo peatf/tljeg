@@ -7,6 +7,7 @@ export type Dump = {
   contexts: any[];
   runtimeSpecs: any[];
   releaseNotes: any[];
+  settings?: { highContrast?: boolean; textScale?: string };
   // audio removed
 };
 
@@ -18,7 +19,13 @@ export async function exportAll(): Promise<Blob> {
     db.table('runtimeSpecs').toArray(),
     db.table('releaseNotes').toArray()
   ]);
-  const dump: Dump = { userEntries, traits, contexts, runtimeSpecs, releaseNotes } as any;
+  let settings: Dump['settings'] | undefined;
+  try {
+    const hc = !!localStorage.getItem('tja-hc');
+    const ts = localStorage.getItem('tja-text-scale') || undefined;
+    settings = { highContrast: hc || undefined, textScale: ts };
+  } catch {}
+  const dump: Dump = { userEntries, traits, contexts, runtimeSpecs, releaseNotes, settings } as any;
   return new Blob([JSON.stringify(dump)], { type: 'application/json' });
 }
 
@@ -30,6 +37,11 @@ export async function importAll(dump: Dump) {
   await db.table('runtimeSpecs').bulkPut(dump.runtimeSpecs as any);
   await db.table('releaseNotes').bulkPut(dump.releaseNotes as any);
   });
+  // Restore settings
+  try {
+    if (dump.settings?.highContrast) localStorage.setItem('tja-hc', '1');
+    if (dump.settings?.textScale) localStorage.setItem('tja-text-scale', String(dump.settings.textScale));
+  } catch {}
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
