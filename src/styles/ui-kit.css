@@ -17,8 +17,13 @@
   --font-display: Inter, ui-sans-serif, system-ui, Helvetica, Arial, sans-serif;
 }
 
-.font-mono { font-family: var(--font-mono); }
-.font-display { font-family: var(--font-display); }
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
 
 /* Stacked button base */
 .stacked-button {
@@ -33,7 +38,11 @@
   justify-content: center;
   -webkit-tap-highlight-color: transparent;
 }
-.stacked-button:hover { transform: translateY(-4px) scale(1.03); }
+
+.stacked-button:hover {
+  transform: translateY(-4px) scale(1.03);
+}
+
 .stacked-button .layer {
   position: absolute;
   top: 50%;
@@ -41,41 +50,166 @@
   transform: translate(-50%, -50%);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.stacked-button .feathered { box-shadow: 0 0 15px 2px var(--layer-color, transparent); }
-.stacked-button:active .layer { transform: translate(-50%, -50%) scale(0.95); }
+
+.stacked-button .feathered {
+  box-shadow: 0 0 15px 2px var(--layer-color, transparent);
+}
+
+.stacked-button:active .layer {
+  transform: translate(-50%, -50%) scale(0.95);
+}
 
 /* Large rectangular CTA */
-.rect-btn { width: 320px; height: 120px; }
-/* Size variants for rectangular button */
-.rect-btn--sm { width: 220px; height: 56px; }
-.rect-btn--md { width: 280px; height: 72px; }
-.rect-btn--wide { width: 520px; height: 72px; }
-@media (max-width: 640px) {
-  .rect-btn--wide { width: 100%; }
+.rect-btn {
+  width: 320px;
+  height: 120px;
 }
-.rect-btn .l1 { width: 100%; height: 100%; background-color: var(--color-base-1); border-radius: 12px; }
-.rect-btn .l2 { --layer-color: var(--color-base-2); width: 94%; height: 92%; background-color: var(--layer-color); border-radius: 10px; }
-.rect-btn .l3 { --layer-color: var(--color-base-3); width: 88%; height: 84%; background-color: var(--layer-color); border-radius: 8px; }
-.rect-btn .l4 { --layer-color: var(--color-base-4); width: 82%; height: 74%; background-color: var(--layer-color); border-radius: 6px; }
-.rect-btn .l5 { --layer-color: var(--color-base-5); width: 70%; height: 60%; background-color: var(--layer-color); border-radius: 5px; }
-.rect-btn .l6 { --layer-color: rgba(25, 25, 23, 0.8); width: 58%; height: 44%; background-color: var(--layer-color); border-radius: 4px; }
-.rect-btn:active .l2 { transform: translate(-50%, -50%) scale(0.94); }
-.rect-btn:active .l3 { transform: translate(-50%, -50%) scale(0.93); }
-.rect-btn:active .l4 { transform: translate(-50%, -50%) scale(0.92); }
-.rect-btn:active .l5 { transform: translate(-50%, -50%) scale(0.91); }
-.rect-btn:active .l6 { transform: translate(-50%, -50%) scale(0.90); }
+
+/* Size variants for rectangular button */
+.rect-btn--sm {
+  width: 220px;
+  height: 56px;
+}
+
+.rect-btn--md {
+  width: 280px;
+  height: 72px;
+}
+
+.rect-btn--wide {
+  width: 520px;
+  height: 72px;
+}
+
+@media (max-width: 640px) {
+  .rect-btn--wide {
+    width: 100%;
+  }
+}
+
+.rect-btn .l1 {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-base-1);
+  border-radius: 12px;
+}
+
+.rect-btn .l2 {
+  --layer-color: var(--color-base-2);
+  width: 94%;
+  height: 92%;
+  background-color: var(--layer-color);
+  border-radius: 10px;
+}
+
+.rect-btn .l3 {
+  --layer-color: var(--color-base-3);
+  width: 88%;
+  height: 84%;
+  background-color: var(--layer-color);
+  border-radius: 8px;
+}
+
+.rect-btn .l4 {
+  --layer-color: var(--color-base-4);
+  width: 82%;
+  height: 74%;
+  background-color: var(--layer-color);
+  border-radius: 6px;
+}
+
+.rect-btn .l5 {
+  --layer-color: var(--color-base-5);
+  width: 70%;
+  height: 60%;
+  background-color: var(--layer-color);
+  border-radius: 5px;
+}
+
+.rect-btn .l6 {
+  --layer-color: rgba(25, 25, 23, 0.8);
+  width: 58%;
+  height: 44%;
+  background-color: var(--layer-color);
+  border-radius: 4px;
+}
+
+.rect-btn:active .l2 {
+  transform: translate(-50%, -50%) scale(0.94);
+}
+
+.rect-btn:active .l3 {
+  transform: translate(-50%, -50%) scale(0.93);
+}
+
+.rect-btn:active .l4 {
+  transform: translate(-50%, -50%) scale(0.92);
+}
+
+.rect-btn:active .l5 {
+  transform: translate(-50%, -50%) scale(0.91);
+}
+
+.rect-btn:active .l6 {
+  transform: translate(-50%, -50%) scale(0.90);
+}
 
 /* Circular nav button */
-.nav-btn { width: 52px; height: 52px; }
-.nav-btn .layer { border-radius: 50%; }
-.nav-btn .l1 { width: 100%; height: 100%; background-color: var(--color-base-1); }
-.nav-btn .l2 { --layer-color: var(--color-base-2); width: 85%; height: 85%; background-color: var(--layer-color); }
-.nav-btn .l3 { --layer-color: var(--color-base-3); width: 70%; height: 70%; background-color: var(--layer-color); }
-.nav-btn .l4 { --layer-color: var(--color-base-4); width: 55%; height: 55%; background-color: var(--layer-color); }
-.nav-btn .nav-icon { position: relative; z-index: 10; color: var(--color-base-3); transition: all 0.2s; }
-.nav-btn:hover .nav-icon { color: var(--color-text-primary); }
-.nav-btn.active .l4 { background-color: var(--color-accent); box-shadow: 0 0 15px var(--color-accent-glow); }
-.nav-btn.active .nav-icon { color: white; }
+.nav-btn {
+  width: 52px;
+  height: 52px;
+}
+
+.nav-btn .layer {
+  border-radius: 50%;
+}
+
+.nav-btn .l1 {
+  width: 100%;
+  height: 100%;
+  background-color: var(--color-base-1);
+}
+
+.nav-btn .l2 {
+  --layer-color: var(--color-base-2);
+  width: 85%;
+  height: 85%;
+  background-color: var(--layer-color);
+}
+
+.nav-btn .l3 {
+  --layer-color: var(--color-base-3);
+  width: 70%;
+  height: 70%;
+  background-color: var(--layer-color);
+}
+
+.nav-btn .l4 {
+  --layer-color: var(--color-base-4);
+  width: 55%;
+  height: 55%;
+  background-color: var(--layer-color);
+}
+
+.nav-btn .nav-icon {
+  position: relative;
+  z-index: 10;
+  color: var(--color-base-3);
+  transition: all 0.2s;
+}
+
+.nav-btn:hover .nav-icon {
+  color: var(--color-text-primary);
+}
+
+.nav-btn.active .l4 {
+  background-color: var(--color-accent);
+  box-shadow: 0 0 15px var(--color-accent-glow);
+}
+
+.nav-btn.active .nav-icon {
+  color: white;
+}
 
 /* Floating label input panel */
 .input-panel {
@@ -85,10 +219,12 @@
   background: rgba(50, 50, 48, 0.05);
   transition: all 0.2s ease;
 }
+
 .input-panel:focus-within {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 1px var(--color-accent), 0 0 10px var(--color-accent-glow);
 }
+
 .input-panel-label {
   position: absolute;
   top: -10px;
@@ -103,7 +239,11 @@
   letter-spacing: 0.1em;
   transition: color 0.2s ease;
 }
-.input-panel:focus-within .input-panel-label { color: var(--color-accent); }
+
+.input-panel:focus-within .input-panel-label {
+  color: var(--color-accent);
+}
+
 .form-element {
   width: 100%;
   background: transparent;
@@ -113,4 +253,128 @@
   font-size: 15px;
   line-height: 1.5;
 }
-.form-element:focus { outline: none; }
+
+.form-element:focus {
+  outline: none;
+}
+
+/* Button Hierarchy - consistent interaction patterns */
+.btn-primary {
+  padding: 0.5rem 1rem;
+  background-color: var(--color-base-5);
+  color: var(--color-bg);
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-base-4);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-base-3);
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-base-4);
+  background-color: rgba(50, 50, 48, 0.05);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-tertiary {
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border: none;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.btn-tertiary:hover {
+  color: var(--color-text-primary);
+}
+
+.btn-tertiary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Section Card - reusable container with breathing room */
+.section-card {
+  padding: 1.5rem;
+  border: 1px solid var(--color-base-2);
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+}
+
+.section-card+.section-card {
+  margin-top: 0.5rem;
+}
+
+/* Chip variants for different contexts */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+}
+
+.chip-interactive {
+  background-color: var(--color-base-1);
+  border: 1px solid var(--color-base-2);
+  cursor: pointer;
+}
+
+.chip-interactive:hover {
+  border-color: var(--color-base-3);
+  background-color: var(--color-base-2);
+}
+
+.chip-interactive[aria-pressed="true"] {
+  background-color: var(--color-accent-glow);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.chip-display {
+  background-color: var(--color-base-1);
+  border: 1px solid var(--color-base-2);
+  cursor: default;
+}
+
+.chip-autofill {
+  background-color: transparent;
+  border: 1px dashed var(--color-base-3);
+  cursor: pointer;
+}
+
+.chip-autofill:hover {
+  background-color: var(--color-base-1);
+  border-style: solid;
+}

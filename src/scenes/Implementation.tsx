@@ -1,25 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import { addReleaseNote, addRuntimeSpec, listReleaseNotes, listRuntimeSpecs, deleteReleaseNote, updateRuntimeSpecMicroActs, listEntries, listContexts } from '../storage/storage';
-import { getSuggestions, type SuggestResult } from '../ml';
+import { getSuggestions } from '../ml';
 import Timer from '../components/Timer';
-import StepTracker from '../components/StepTracker';
 import { makeIcsEvent } from '../storage/export';
-import StackedButton from '../components/ui/StackedButton';
-import InputPanel from '../components/ui/InputPanel';
-import DefinitionPopover from '../components/DefinitionPopover';
 
 export default function Implementation() {
   const [label, setLabel] = useState('');
   const [principle, setPrinciple] = useState('');
   const [micro1, setMicro1] = useState('');
-  const [micro2, setMicro2] = useState('');
   const [friction, setFriction] = useState('');
   const [specs, setSpecs] = useState<any[]>([]);
   const [selectedSpecId, setSelectedSpecId] = useState<string | null>(null);
   const [action, setAction] = useState('');
   const [notes, setNotes] = useState<any[]>([]);
   const [frictionChips, setFrictionChips] = useState<{ id: string; text: string; source: 'seed' | 'user'; from?: 'safety' | 'calibration' }[]>([]);
-  const [microActChips, setMicroActChips] = useState<{ id: string; text: string; source: 'seed' | 'user'; from?: 'void' | 'clarity' | 'safety' }[]>([]);
+  const [microActChips, setMicroActChips] = useState<{ id: string; text: string; source: 'seed' | 'user'; from?: 'void' }[]>([]);
   const [newAct, setNewAct] = useState('');
   const [actTimers, setActTimers] = useState<Record<string, boolean>>({});
   const [status, setStatus] = useState('');
@@ -54,7 +49,7 @@ export default function Implementation() {
           listContexts('friction')
         ]);
         const chips: { id: string; text: string; source: 'seed' | 'user'; from?: 'safety' | 'calibration' }[] = [...mlSuggestions.items];
-        
+
         // Helper: same-day filter
         const today = new Date().toDateString();
         const isTodayTs = (ts?: number) => !!ts && new Date(ts).toDateString() === today;
@@ -90,104 +85,39 @@ export default function Implementation() {
   }, [friction]);
 
   useEffect(() => {
-    // Enhanced micro-act suggestions from VOID, Clarity, and Safety
+    // Generate sensible micro-act suggestions - prioritize VOID inspirations, then fallback to seed suggestions
     (async () => {
       try {
-        const [ctxResult, trResult, voidInsp, clarityEntries, safetyEntries] = await Promise.all([
-          getSuggestions('contexts'),
-          getSuggestions('traits'),
-          listEntries('implementation_suggestions'),
-          listEntries('clarity'),
-          listEntries('safety')
-        ]);
-        
-        const acts: { id: string; text: string; source: 'seed' | 'user'; from?: 'void' | 'clarity' | 'safety' }[] = [];
-        
-        // Blacklist of negative terms that shouldn't appear as traits for micro-acts
-        const negativeTraitTerms = [
-          'scrolling', 'overcommit', 'clutter', 'late nights', 'self-critique',
-          'procrastination', 'overthinking', 'rushing', 'avoidance', 'perfectionism',
-          'distraction', 'overwhelm', 'anxiety', 'stress', 'worry', 'fear',
-          'doubt', 'impatience', 'anger', 'frustration', 'burnout', 'exhaustion'
-        ];
-        
-        // Filter traits to only include positive ones
-        const positiveTraits = trResult.items.filter(t => {
-          const text = t.text.toLowerCase().trim();
-          return !negativeTraitTerms.some(negative => 
-            text.includes(negative.toLowerCase()) || 
-            negative.toLowerCase().includes(text)
-          );
-        });
-        
-        // Seed suggestions (fallback) - only use positive traits, not contexts
-        for (const t of positiveTraits.slice(0, 4)) {
-          // Generate positive embodiment actions for traits
-          acts.push({ id: `tr:${t.id}`, text: `Act as ${t.text} for 2m`, source: 'seed' });
-        }
-        
-        // Expanded universal positive micro-acts as fallback
-        const universalMicroActs = [
-          'Take 3 deep breaths mindfully',
-          'Make eye contact during conversations', 
-          'Stand with good posture for 1 minute',
-          'Write one thing you\'re grateful for',
-          'Act as confident for 2m',
-          'Act as patient for 2m',
-          'Act as focused for 2m',
-          'Act as gentle for 2m',
-          'Act as curious for 2m',
-          'Act as grounded for 2m'
-        ];
-        
-        // Always ensure we have at least 4 positive suggestions
-        if (acts.length < 4) {
-          universalMicroActs.slice(0, 4 - acts.length).forEach((text, i) => {
-            acts.push({ id: `universal:${i}`, text, source: 'seed' });
-          });
-        }
-        
-        // Helper: same-day filter
+        const insp = await listEntries('implementation_suggestions');
+        const acts: { id: string; text: string; source: 'seed' | 'user'; from?: 'void' }[] = [];
+
+        // Add today's VOID-derived inspirations first
         const today = new Date().toDateString();
-        const isTodayTs = (ts?: number) => !!ts && new Date(ts).toDateString() === today;
-        
-        // VOID: implementation suggestions (same day)
-        for (const s of voidInsp) {
+        for (const s of insp) {
           const when = Date.parse(s.content?.created_at || '') || s.timestamp;
           if (when && new Date(when).toDateString() === today && s.content?.suggestion) {
-            const isInspiration = s.content?.session_id && s.content?.inspiration_text;
-            const displayText = isInspiration ? s.content.inspiration_text : s.content.suggestion;
-            acts.unshift({ id: `void:${s.id}`, text: displayText, source: 'user', from: 'void' });
+            const displayText = s.content.inspiration_text || s.content.suggestion;
+            acts.unshift({
+              id: `void:${s.id}`,
+              text: displayText,
+              source: 'user',
+              from: 'void'
+            });
           }
         }
-        
-        // Clarity: overlaps → micro-acts
-        for (const c of clarityEntries) {
-          if (!isTodayTs(c.timestamp)) continue;
-          const overlap = c.content?.overlap?.trim();
-          if (overlap) {
-            acts.unshift({ id: `clarity:${c.id}`, text: `Repeat: ${overlap} once today`, source: 'user', from: 'clarity' });
-          }
+
+        // Add thoughtful seed suggestions if no VOID content
+        if (acts.length === 0) {
+          acts.push(
+            { id: 'seed-1', text: 'One conversation I have been avoiding', source: 'seed' },
+            { id: 'seed-2', text: 'Something small I can complete today', source: 'seed' },
+            { id: 'seed-3', text: 'A 5-minute practice that grounds me', source: 'seed' },
+            { id: 'seed-4', text: 'Reach out to someone I appreciate', source: 'seed' },
+            { id: 'seed-5', text: 'One thing I can let go of today', source: 'seed' }
+          );
         }
-        
-        // Safety: needs → micro-acts
-        for (const s of safetyEntries) {
-          if (!isTodayTs(s.timestamp)) continue;
-          const needsText = s.content?.needsText?.trim();
-          const partNeed = s.content?.partNeed?.trim();
-          if (needsText) {
-            acts.unshift({ id: `safety-need:${s.id}`, text: `Give yourself: ${needsText} for 2m`, source: 'user', from: 'safety' });
-          }
-          if (partNeed) {
-            acts.unshift({ id: `safety-part:${s.id}`, text: `Give yourself: ${partNeed} for 2m`, source: 'user', from: 'safety' });
-          }
-        }
-        
-        // Remove duplicates by normalized text, sort by recency, cap to 5
-        const uniqueActs = acts.filter((act, index, self) => 
-          index === self.findIndex(a => a.text === act.text)
-        );
-        setMicroActChips(uniqueActs.slice(0, 5));
+
+        setMicroActChips(acts.slice(0, 6));
       } catch {
         setMicroActChips([]);
       }
@@ -200,12 +130,12 @@ export default function Implementation() {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
-    
+
     try {
       const raw = localStorage.getItem('tja-reminders');
       setReminders(raw ? JSON.parse(raw) : []);
-    } catch {}
-    
+    } catch { }
+
     const t = setInterval(() => {
       try {
         const raw = localStorage.getItem('tja-reminders');
@@ -217,7 +147,7 @@ export default function Implementation() {
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(`TGJ Reminder`, {
               body: due.text,
-              icon: '/icons/icon-192.png',
+              icon: '/favicon.ico',
               tag: `reminder-${due.id}`,
               requireInteraction: false
             });
@@ -229,7 +159,7 @@ export default function Implementation() {
           localStorage.setItem('tja-reminders', JSON.stringify(arr));
           setReminders(arr);
         }
-      } catch {}
+      } catch { }
     }, 60000);
     return () => clearInterval(t);
   }, []);
@@ -244,13 +174,12 @@ export default function Implementation() {
       const id = await addRuntimeSpec({
         label,
         principle,
-        microActs: [micro1, micro2].filter(Boolean),
+        microActs: micro1 ? [micro1] : [],
         friction
       });
       setLabel('');
       setPrinciple('');
       setMicro1('');
-      setMicro2('');
       setFriction('');
       const next = await listRuntimeSpecs();
       setSpecs(next);
@@ -303,14 +232,14 @@ export default function Implementation() {
         }
       });
     }
-    
+
     const base = selectedSpec?.label || label || 'Follow up';
     const mins = parseInt(prompt('Remind me in how many minutes? (default 120)') || '120', 10);
     const when = Date.now() + (isNaN(mins) ? 120 : mins) * 60000;
     const next = [...reminders, { id: crypto.randomUUID(), text: base, dueAt: when, done: false, createdAt: Date.now() }];
     localStorage.setItem('tja-reminders', JSON.stringify(next));
     setReminders(next);
-    
+
     const hasNotifications = 'Notification' in window && Notification.permission === 'granted';
     setStatus(`Reminder set${hasNotifications ? ' (notifications enabled)' : ' (browser alerts)'}. Will remind in ${isNaN(mins) ? 120 : mins} minutes.`);
     setTimeout(() => setStatus(''), 3000);
@@ -337,84 +266,85 @@ export default function Implementation() {
 
   return (
     <section className="grid gap-6">
-      <StepTracker current="implementation" />
       <header className="grid gap-2">
-  <h1 className="text-2xl font-bold doto-base doto-700">Implementation</h1>
+        <h1 className="text-2xl font-bold font-humanist">Implementation</h1>
         <p className="text-ink-700 text-sm">The actions you take are reflection of who you are.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
-          This is where your clarified, calibrated self moves into the world. But the secret is, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it tugs you toward the right choices, conversations, and micro-acts that belong to this new version of you.
+          This is where your clarified, calibrated self moves into the world. Keep in mind, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it pulls you toward the aligned choices, conversations, and small acts that belong to this version of you.
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>
       </header>
       <div className="grid gap-2">
-        <p className="text-xs text-ink-600">Give your action plan a simple name (e.g., Morning reset, Saying no gracefully).</p>
-        <InputPanel
-          label="TITLE"
-          id="label"
-          value={label}
-          onChange={(e) => setLabel((e.target as HTMLInputElement).value)}
-          aria-label="Plan title"
-          placeholder="Morning reset, Saying no gracefully…"
-        />
-
-        <p className="text-xs text-ink-600">What core value or intention does this reflect? (e.g., Calm, Honesty, Patience).</p>
-        <InputPanel
-          label="PRINCIPLE"
-          id="principle"
-          value={principle}
-          onChange={(e) => setPrinciple((e.target as HTMLInputElement).value)}
-          aria-label="Principle"
-          placeholder="Calm, Honesty, Patience…"
-        />
-
-        <p className="text-xs text-ink-600">List 1–2 small, concrete actions that express this principle. (e.g., Pause before replying, Put phone in drawer at dinner). <DefinitionPopover term="Micro‑act">A tiny behavior that expresses your principle in ordinary moments.</DefinitionPopover></p>
-        <InputPanel
-          label="MICRO-ACT 1"
-          id="micro1"
-          value={micro1}
-          onChange={(e) => setMicro1((e.target as HTMLInputElement).value)}
-          aria-label="Micro act 1"
-          placeholder="Pause before replying…"
-        />
-        <InputPanel
-          label="MICRO-ACT 2"
-          id="micro2"
-          value={micro2}
-          onChange={(e) => setMicro2((e.target as HTMLInputElement).value)}
-          aria-label="Micro act 2"
-          placeholder="Phone in drawer at dinner…"
-        />
-        <div className="flex flex-wrap gap-2 mt-1" role="group" aria-label="Micro-act suggestions">
+        <label htmlFor="label" className="text-sm">Title your next 24 hours</label>
+        <input id="label" value={label} onChange={(e) => setLabel(e.target.value)} className="border p-2 rounded" aria-label="Plan title" />
+        <label htmlFor="principle" className="text-sm">What is one thing that feels new and fresh in you today?</label>
+        <input id="principle" value={principle} onChange={(e) => setPrinciple(e.target.value)} className="border p-2 rounded" aria-label="Principle" />
+        <label htmlFor="micro1" className="text-sm">
+          Do you feel any moves or actions arising that feel like a direct expression of who you've become?
+          <span className="block text-xs text-ink-500 mt-1">
+            It's okay if nothing arises—let life respond to you.
+          </span>
+        </label>
+        <input id="micro1" value={micro1} onChange={(e) => setMicro1(e.target.value)} className="border p-2 rounded" placeholder="Optional: one small act..." aria-label="Small act" />
+        <div className="flex flex-wrap gap-2 mt-1" role="group" aria-label="Suggestions">
           {microActChips.map((c) => (
-            <button key={c.id} className="px-3 py-1 rounded-full border text-sm" onClick={() => {
-              if (!micro1) setMicro1(c.text); else setMicro2(c.text);
-            }} aria-label={`Micro-act ${c.text}`} title={c.source === 'seed' ? "Anchor = the first trait or identity shift you want to ground in." : undefined}>
-              {c.text} <span className="text-slate-400">({c.from ? `from ${c.from}` : c.source === 'seed' ? 'anchor' : c.source})</span>
+            <button key={c.id} className="px-3 py-1 rounded-full border text-sm hover:bg-bone-50" onClick={() => setMicro1(c.text)} aria-label={`Suggestion: ${c.text}`}>
+              {c.text} {c.from === 'void' && <span className="text-purple-500">(from VOID)</span>}
             </button>
           ))}
           {microActChips.length === 0 && !chipsLoading && (
-            <span className="text-xs text-ink-600">No suggestions yet</span>
+            <span className="text-xs text-ink-500">Suggestions will appear after you use VOID</span>
           )}
         </div>
-        <p className="text-xs text-ink-600" id="friction-help">Name one thing you can reduce tomorrow to help this land</p>
-        <InputPanel label="FRICTION" id="fric" value={friction} onChange={(e) => setFriction((e.target as HTMLInputElement).value)} aria-label="Friction"/>
+        <label htmlFor="fric" className="text-sm font-medium">What's in the Way?</label>
+        <p className="text-xs text-ink-600 mb-1" id="friction-help">
+          Name one thing you can reduce tomorrow to help your new way of being take root.
+        </p>
+        <input id="fric" value={friction} onChange={(e) => setFriction(e.target.value)} className="border p-2 rounded" placeholder="Optional: one obstacle to reduce..." aria-label="Obstacle" aria-describedby="friction-help" />
         {chipsLoading && <div className="text-sm text-ink-600 italic">Loading suggestions...</div>}
+        {frictionChips.some(c => c.from === 'safety' || c.from === 'calibration') && (
+          <p className="text-xs text-ink-500 mt-2 mb-1">From earlier, you mentioned these obstacles:</p>
+        )}
         <div className="flex flex-wrap gap-2">
           {frictionChips.map((c) => (
-            <button key={c.id} className={`px-3 py-1 rounded-full border text-sm ${c.from === 'safety' ? 'border-amber-400 bg-amber-50' : c.from === 'calibration' ? 'border-blue-300 bg-blue-50' : ''}`} onClick={() => setFriction(c.text)} aria-label={`Friction ${c.text} ${c.from ? `from ${c.from}` : ''}`} title={c.from ? `From ${c.from}` : c.source === 'seed' ? 'Anchor = first trait or identity shift' : undefined}>
-              {c.text} <span className="text-slate-400">({c.from ?? (c.source === 'seed' ? 'anchor' : c.source)})</span>
+            <button key={c.id} className={`px-3 py-1 rounded-full border text-sm hover:bg-bone-50 ${c.from === 'safety' ? 'border-amber-400 bg-amber-50' : c.from === 'calibration' ? 'border-blue-300 bg-blue-50' : ''}`} onClick={() => setFriction(c.text)} aria-label={`Obstacle: ${c.text}${c.from ? ` (from ${c.from})` : ''}`}>
+              {c.text}
             </button>
           ))}
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <StackedButton className="rect-btn--sm" onClick={saveSpec} disabled={loading} aria-label="Save plan">
-            {loading ? 'SAVING…' : 'SAVE PLAN'}
-          </StackedButton>
-          {/* Keep utility actions as bordered buttons */}
-          <button className="px-4 py-2 border rounded" onClick={saveToCalendar} aria-label="Save to Calendar">Save to Calendar</button>
-          <button className="px-4 py-2 border rounded" onClick={saveQuickNote} aria-label="Save a Note">Save a Note</button>
-          <button className="px-4 py-2 border rounded" onClick={addReminder} aria-label="Add reminder">I'll add this later</button>
+
+        {/* Consolidated save buttons - reduced from 4 to 2 */}
+        <div className="flex gap-3 mt-4">
+          <button
+            className="px-6 py-3 bg-ink-900 text-bone-50 rounded-lg hover:bg-ink-800 font-medium"
+            onClick={saveSpec}
+            disabled={loading}
+            aria-label="Save plan"
+          >
+            {loading ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            className="px-4 py-2 text-ink-600 hover:text-ink-800"
+            onClick={() => {
+              setLabel('');
+              setPrinciple('');
+              setMicro1('');
+              setFriction('');
+            }}
+            aria-label="Skip for now"
+          >
+            Skip for now
+          </button>
         </div>
+
+        {/* Secondary actions appear after save */}
+        {status === 'Saved plan.' && (
+          <div className="flex gap-2 mt-3 p-3 bg-green-50 rounded-lg">
+            <span className="text-sm text-green-700">✓ Saved!</span>
+            <button className="px-3 py-1 border rounded text-sm hover:bg-white" onClick={saveToCalendar}>Add to Calendar</button>
+            <button className="px-3 py-1 border rounded text-sm hover:bg-white" onClick={addReminder}>Set reminder</button>
+          </div>
+        )}
       </div>
 
       <div className="grid gap-2">
@@ -464,7 +394,7 @@ export default function Implementation() {
         <div className="grid gap-2">
           <h3 className="font-semibold">Release Notes for “{selectedSpec.label}”</h3>
           <div className="flex items-center gap-2">
-            <input id="today-only" type="checkbox" checked={todayOnly} onChange={(e) => setTodayOnly(e.target.checked)} aria-label="Show today only"/>
+            <input id="today-only" type="checkbox" checked={todayOnly} onChange={(e) => setTodayOnly(e.target.checked)} aria-label="Show today only" />
             <label htmlFor="today-only" className="text-sm">Show today only</label>
           </div>
           {selectedSpec.microActs?.length ? (
@@ -475,7 +405,7 @@ export default function Implementation() {
                     <input type="checkbox" checked={isActDoneToday(act)} onChange={() => toggleAct(act)} aria-label={`Complete ${act}`} />
                     {act}
                   </label>
-                  <button className="px-2 py-1 border rounded" onClick={() => setActTimers((t) => ({ ...t, [act]: true }))} aria-label={`Start timer for ${act}`}>Start 60s</button>
+                  <button className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2" onClick={() => setActTimers((t) => ({ ...t, [act]: true }))} aria-label={`Start timer for ${act}`}><span aria-hidden>▶</span> Start 60s</button>
                   {actTimers[act] && (
                     <Timer seconds={60} label={`${act} timer`} onDone={() => setActTimers((t) => ({ ...t, [act]: false }))} />
                   )}
@@ -484,7 +414,7 @@ export default function Implementation() {
             </div>
           ) : null}
           <div className="flex gap-2">
-            <InputPanel label="NEW MICRO-ACT" value={newAct} onChange={(e) => setNewAct((e.target as HTMLInputElement).value)} placeholder="Add micro-act" className="flex-1" aria-label="New micro act"/>
+            <input value={newAct} onChange={(e) => setNewAct(e.target.value)} placeholder="Add micro-act" className="border p-2 rounded flex-1" aria-label="New micro act" />
             <button className="px-3 py-2 border rounded" onClick={async () => {
               if (!selectedSpecId || !newAct) return;
               const nextActs = [...(selectedSpec.microActs || []), newAct];
@@ -494,7 +424,7 @@ export default function Implementation() {
             }} aria-label="Add micro act">Add</button>
           </div>
           <div className="flex gap-2">
-            <InputPanel label="RELEASE NOTE" value={action} onChange={(e) => setAction((e.target as HTMLInputElement).value)} placeholder="Logged action" className="flex-1" aria-label="Release note input"/>
+            <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Logged action" className="border p-2 rounded flex-1" aria-label="Release note input" />
             <button className="px-4 py-2 border rounded" onClick={addNote} aria-label="Add release note">Add</button>
           </div>
           <ul className="list-disc pl-6">
@@ -505,7 +435,7 @@ export default function Implementation() {
         </div>
       )}
 
-  {/* Audio integration removed */}
+      {/* Audio integration removed */}
     </section>
   );
 }

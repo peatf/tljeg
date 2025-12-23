@@ -16,7 +16,7 @@ export interface ArtifactNode {
   to: string;
   stepIndex: number;
   ariaLabel: string;
-  positions: BreakpointPositions;
+  angle?: number; // degrees (0 at top, clockwise)
   isVoid?: boolean;
   imagePath?: string;
 }
@@ -41,12 +41,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 1,
     ariaLabel: 'Go to Safety (Step 1)',
     imagePath: '/src/assets/safety.svg',
-    positions: {
-      xs: { x: 50, y: 150 },
-      md: { x: 80, y: 150 },
-      lg: { x: 100, y: 150 },
-      xl: { x: 120, y: 150 }
-    }
+    angle: 300
   },
   {
     id: 'clarity',
@@ -55,12 +50,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 2,
     ariaLabel: 'Go to Clarity (Step 2)',
     imagePath: '/src/assets/clarity.svg',
-    positions: {
-      xs: { x: 150, y: 150 },
-      md: { x: 200, y: 150 },
-      lg: { x: 250, y: 150 },
-      xl: { x: 300, y: 150 }
-    }
+    angle: 30
   },
   {
     id: 'calibration',
@@ -69,12 +59,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 3,
     ariaLabel: 'Go to Calibration (Step 3)',
     imagePath: '/src/assets/calibration.svg',
-    positions: {
-      xs: { x: 250, y: 150 },
-      md: { x: 320, y: 150 },
-      lg: { x: 400, y: 150 },
-      xl: { x: 480, y: 150 }
-    }
+    angle: 240
   },
   {
     id: 'void',
@@ -83,13 +68,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 4,
     ariaLabel: 'Go to VOID (Anchor Point)',
     isVoid: true,
-    imagePath: '/src/assets/VOID_1.webp',
-    positions: {
-      xs: { x: 350, y: 150 },
-      md: { x: 440, y: 150 },
-      lg: { x: 550, y: 150 },
-      xl: { x: 660, y: 150 }
-    }
+    imagePath: '/src/assets/VOID_1.webp'
   },
   {
     id: 'implementation',
@@ -98,12 +77,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 5,
     ariaLabel: 'Go to Implementation (Step 5)',
     imagePath: '/src/assets/implementation.svg',
-    positions: {
-      xs: { x: 450, y: 150 },
-      md: { x: 560, y: 150 },
-      lg: { x: 700, y: 150 },
-      xl: { x: 840, y: 150 }
-    }
+    angle: 120
   },
   {
     id: 'resets',
@@ -112,12 +86,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 6,
     ariaLabel: 'Go to Resets (Step 6)',
     imagePath: '/src/assets/breathing.svg',
-    positions: {
-      xs: { x: 550, y: 150 },
-      md: { x: 680, y: 150 },
-      lg: { x: 850, y: 150 },
-      xl: { x: 1020, y: 150 }
-    }
+    angle: 180
   }
 ];
 
@@ -160,22 +129,14 @@ export function getNodeById(id: string): ArtifactNode | undefined {
   return artifactNodes.find(node => node.id === id);
 }
 
-export function getNodePosition(nodeId: string, breakpoint: keyof BreakpointPositions): NodePosition {
-  const node = getNodeById(nodeId);
-  if (!node) {
-    throw new Error(`Node with id "${nodeId}" not found`);
-  }
-  return node.positions[breakpoint];
-}
-
-export function getConnectionsForBreakpoint(breakpoint: keyof BreakpointPositions): ArtifactConnection[] {
-  return artifactConnections.filter(connection => connection.enabled[breakpoint]);
+export function getConnectionsForBreakpoint(): ArtifactConnection[] {
+  return artifactConnections;
 }
 
 export function getNextNode(currentNodeId: string): ArtifactNode | undefined {
   const currentNode = getNodeById(currentNodeId);
   if (!currentNode) return undefined;
-  
+
   const connection = artifactConnections.find(conn => conn.from === currentNodeId);
   return connection ? getNodeById(connection.to) : undefined;
 }

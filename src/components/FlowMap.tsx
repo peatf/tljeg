@@ -13,22 +13,9 @@ const nodes = [
 export default function FlowMap() {
   const prefersReduced = useReducedMotion();
   return (
-  <div className="grid gap-6 flowmap-reserve">
-      <div className="text-center text-ink-600 text-sm mb-2">
-        <p className="mb-2">Tap any node to navigate. VOID anchors the flow.</p>
-        <div className="flex justify-center items-center gap-1 text-xs">
-          <span>1. Safety</span>
-          <span className="text-slate-400">→</span>
-          <span>2. Clarity</span>
-          <span className="text-slate-400">→</span>
-          <span>3. Calibration</span>
-          <span className="text-slate-400">→</span>
-          <span>4. VOID</span>
-          <span className="text-slate-400">→</span>
-          <span>5. Implementation</span>
-          <span className="text-slate-400">→</span>
-          <span>6. Resets</span>
-        </div>
+    <div className="grid gap-6">
+      <div className="text-center text-sm text-ink-600 mb-2">
+        This is your process map. Start with Safety, flow step by step, and return to VOID anytime you want to reset.
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 items-center relative">
@@ -66,6 +53,22 @@ export default function FlowMap() {
         )}
       </div>
       
+      <div className="text-center text-ink-600 text-sm">
+        <p className="mb-2">Tap any node to navigate. VOID anchors the flow.</p>
+        <div className="flex justify-center items-center gap-1 text-xs">
+          <span className="bg-slate-100 px-2 py-1 rounded">1. Safety</span>
+          <span className="text-slate-400">→</span>
+          <span className="bg-slate-100 px-2 py-1 rounded">2. Clarity</span>
+          <span className="text-slate-400">→</span>
+          <span className="bg-slate-100 px-2 py-1 rounded">3. Calibration</span>
+          <span className="text-slate-400">→</span>
+          <span className="bg-slate-100 px-2 py-1 rounded">4. VOID</span>
+          <span className="text-slate-400">→</span>
+          <span className="bg-slate-100 px-2 py-1 rounded">5. Implementation</span>
+          <span className="text-slate-400">→</span>
+          <span className="bg-slate-100 px-2 py-1 rounded">6. Resets</span>
+        </div>
+      </div>
     </div>
   );
 }

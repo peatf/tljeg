@@ -1,6 +1,5 @@
 import { userEntriesTable, traitsTable, runtimeSpecsTable, contextsTable, releaseNotesTable } from './db';
 import { memStore } from './fallback';
-import { sanitizeMaybe, sanitizeText, sanitizeTextArray } from '../security/sanitize';
 
 const hasIDB = typeof indexedDB !== 'undefined';
 if (!hasIDB) {
@@ -23,7 +22,7 @@ export async function listEntries(scene?: string) {
 export async function addTrait(text: string) {
   if (!hasIDB) return memStore.addTrait(text);
   const id = crypto.randomUUID();
-  await traitsTable.put({ id, text: sanitizeText(text) });
+  await traitsTable.put({ id, text });
   return id;
 }
 
@@ -40,7 +39,7 @@ export async function listAudio() {
 export async function addContext(label: string, type: 'ordinary' | 'friction' | 'proof' | 'rehearsal', trait?: string) {
   if (!hasIDB) return memStore.addContext(label, type, trait);
   const id = crypto.randomUUID();
-  await contextsTable.put({ id, label: sanitizeText(label), type, trait: trait ? sanitizeText(trait) : undefined, created_at: Date.now() });
+  await contextsTable.put({ id, label, type, trait, created_at: Date.now() });
   return id;
 }
 
@@ -53,14 +52,7 @@ export async function listContexts(type?: 'ordinary' | 'friction' | 'proof' | 'r
 export async function addRuntimeSpec(data: { label: string; principle: string; microActs: string[]; friction?: string }) {
   if (!hasIDB) return memStore.addRuntimeSpec(data);
   const id = crypto.randomUUID();
-  await runtimeSpecsTable.put({
-    id,
-    created_at: Date.now(),
-    label: sanitizeText(data.label),
-    principle: sanitizeText(data.principle),
-    microActs: sanitizeTextArray(data.microActs),
-    friction: data.friction ? sanitizeText(data.friction) : undefined
-  });
+  await runtimeSpecsTable.put({ id, created_at: Date.now(), ...data });
   return id;
 }
 
@@ -100,10 +92,10 @@ export async function deleteContext(id: string) {
 
 export async function updateContext(id: string, label: string) {
   if (!hasIDB) return memStore.updateContext(id, label);
-  return contextsTable.update(id, { label: sanitizeText(label) });
+  return contextsTable.update(id, { label });
 }
 
 export async function updateRuntimeSpecMicroActs(id: string, microActs: string[]) {
   if (!hasIDB) return memStore.updateRuntimeSpecMicroActs(id, microActs);
-  return runtimeSpecsTable.update(id, { microActs: sanitizeTextArray(microActs) });
+  return runtimeSpecsTable.update(id, { microActs });
 }

@@ -15,6 +15,7 @@ import voidImage from '../../assets/VOID_1.webp';
 interface ArtifactNodeProps {
   node: NodeConfig;
   isActive?: boolean;
+  isHighlighted?: boolean;
   className?: string;
   onNavigate?: (from: string | null, to: string) => void;
 }
@@ -29,11 +30,12 @@ const assetMap: Record<string, string> = {
   'void': voidImage
 };
 
-export function ArtifactNode({ 
-  node, 
-  isActive = false, 
+export function ArtifactNode({
+  node,
+  isActive = false,
+  isHighlighted = false,
   className = '',
-  onNavigate 
+  onNavigate
 }: ArtifactNodeProps) {
   const location = useLocation();
   const motionPrefs = useMotionPrefs();
@@ -41,9 +43,9 @@ export function ArtifactNode({
   const handleClick = () => {
     const fromRoute = location.pathname;
     const fromNodeId = fromRoute.split('/').pop() || null;
-    
+
     onNavigate?.(fromNodeId, node.id);
-    
+
     trackArtifactMapNavigate({
       from: fromNodeId,
       to: node.id,
@@ -65,52 +67,61 @@ export function ArtifactNode({
   const useNodeBreath = motionStyle === 'node_breath';
 
   // For VOID glow mode, only VOID node gets animation
-  const shouldAnimateThisNode = useNodeBreath 
-    ? isActive 
+  const shouldAnimateThisNode = useNodeBreath
+    ? isActive
     : (useVoidGlow && node.isVoid);
 
   const nodeVariants = {
     default: {
       scale: 1,
       opacity: 1,
-      boxShadow: node.isVoid && useVoidGlow ? '0 0 0 rgba(31, 41, 55, 0)' : undefined
+      filter: 'grayscale(0%)',
     },
     hover: {
-      scale: motionPrefs.shouldAnimate('scale') ? 1.02 : 1,
-      opacity: 1
+      scale: motionPrefs.shouldAnimate('scale') ? 1.05 : 1,
+      opacity: 1,
+      filter: 'grayscale(0%)',
     },
     active: {
-      scale: motionPrefs.shouldAnimate('breathing') && shouldAnimateThisNode
-        ? [0.98, 1.02, 0.98] 
+      scale: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode
+        ? [0.98, 1.02, 0.98]
+        : 1.02,
+      opacity: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode
+        ? [0.9, 1, 0.9]
         : 1,
-      opacity: motionPrefs.shouldAnimate('breathing') && shouldAnimateThisNode
-        ? [0.8, 1, 0.8]
-        : 1,
-      boxShadow: node.isVoid && useVoidGlow && motionPrefs.shouldAnimate('glow')
-        ? [
-            '0 0 20px rgba(31, 41, 55, 0.3)',
-            '0 0 40px rgba(31, 41, 55, 0.6)', 
-            '0 0 20px rgba(31, 41, 55, 0.3)'
-          ]
-        : undefined
+    },
+    highlighted: {
+      scale: 1.05,
+      opacity: 1,
+      filter: 'grayscale(0%)',
+      transition: { duration: 0.2 }
     }
   };
 
+  const currentVariant = isActive ? 'active' : (isHighlighted ? 'highlighted' : 'default');
+
   const transition = {
-    duration: motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow') ? 4 : 0,
-    repeat: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode ? Infinity : 0,
-    ease: 'easeInOut'
+    scale: {
+      duration: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode ? 4 : 0.3,
+      repeat: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode ? Infinity : 0,
+      ease: 'easeInOut'
+    },
+    opacity: {
+      duration: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode ? 4 : 0.3,
+      repeat: (motionPrefs.shouldAnimate('breathing') || motionPrefs.shouldAnimate('glow')) && shouldAnimateThisNode ? Infinity : 0,
+      ease: 'easeInOut'
+    }
   };
 
   return (
     <motion.div
       variants={nodeVariants}
       initial="default"
-      animate={isActive ? 'active' : 'default'}
+      animate={currentVariant}
       whileHover="hover"
       whileFocus="hover"
       transition={transition}
-      className={className}
+      className={`${className} z-10`}
     >
       <Link
         to={node.to}
@@ -118,24 +129,48 @@ export function ArtifactNode({
         onKeyDown={handleKeyDown}
         aria-label={node.ariaLabel}
         className={`
-          inline-flex flex-col items-center justify-center p-4 transition-all duration-200
-          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-600 focus-visible:ring-offset-2
-          hover:scale-105 active:scale-95
-          ${node.isVoid ? 'text-bone-50' : 'text-ink-800'}
+          flex flex-col items-center justify-center p-2 transition-all duration-200
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink-600 focus-visible:ring-offset-4
+          rounded-xl
+          ${node.isVoid ? 'text-ink-900' : 'text-ink-800'}
         `}
       >
-        {assetMap[node.id] && (
-          <img
-            src={assetMap[node.id]}
-            alt={node.label}
-            className={`artifact-icon ${
-              node.isVoid ? 'void-icon' : ''
-            }`}
-          />
-        )}
-        <span className={`mt-2 font-medium text-center ${
-          node.isVoid ? 'text-sm md:text-base' : 'text-xs md:text-sm'
-        }`}>
+        <div className={`
+          relative flex items-center justify-center
+          ${node.isVoid ? 'w-24 h-24 md:w-32 md:h-32' : 'w-16 h-16 md:w-20 md:h-20'}
+          ${node.isVoid ? '' : 'rounded-full bg-bone-100 shadow-sm border border-bone-200 overflow-hidden'}
+          transition-shadow duration-300
+          ${isHighlighted && !node.isVoid ? 'ring-2 ring-ink-400 ring-offset-2 shadow-md' : 'group-hover:shadow-md'}
+        `}>
+          {node.isVoid && useVoidGlow && motionPrefs.shouldAnimate('glow') && (
+            <motion.div
+              className="absolute inset-0 rounded-full bg-ink-600/10"
+              animate={{
+                scale: [1, 1.4, 1],
+                opacity: [0.3, 0.6, 0.3],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          )}
+
+          {assetMap[node.id] && (
+            <img
+              src={assetMap[node.id]}
+              alt=""
+              aria-hidden="true"
+              className={`
+                ${node.isVoid ? 'w-full h-full object-contain' : 'w-10 h-10 md:w-12 md:h-12 object-contain'}
+                transition-transform duration-300 group-hover:scale-110
+              `}
+            />
+          )}
+        </div>
+        <span className={`mt-3 font-semibold text-center tracking-tight ${node.isVoid ? 'text-sm md:text-base uppercase tracking-widest' : 'text-xs md:text-sm'
+          }`}>
           {node.label}
         </span>
       </Link>

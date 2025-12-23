@@ -1,13 +1,16 @@
 import { Link } from 'react-router-dom';
-import avatar from '../assets/avatar.webp';
 
 export default function ModeSelector() {
   return (
     <section className="grid gap-6">
       <h1 className="sr-only">Timeline Jumping</h1>
-      <img src="/assets/logo.svg" alt="Timeline Jumping" className="h-10 w-auto" />
+      <img
+        src="/assets/logo@300x.webp"
+        alt="Timeline Jumping"
+        className="h-10 w-auto"
+      />
       <p className="text-ink-600 max-w-prose">
-        Choose how you'd like to engage: a clean text guide, or the interactive, offline-first Digital Timeline Jump.
+        Choose how you’d like to engage: a clean, paginated text guide, or the interactive, offline-first Digital Timeline Jump.
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <Link
@@ -24,12 +27,8 @@ export default function ModeSelector() {
           aria-label="Open Digital Timeline Jump"
         >
           <h2 className="text-xl font-semibold">Digital Timeline Jump</h2>
-          <p className="text-ink-600">Interface based practice, offline Machine Learning.</p>
+          <p className="text-ink-600">Scene-based practice, offline ML.</p>
         </Link>
-      </div>
-      {/* Avatar below the buttons for the opening page */}
-      <div className="mt-6 flex justify-center">
-        <img src={avatar} alt="Avatar" className="w-64 h-auto object-contain shadow" />
       </div>
     </section>
   );

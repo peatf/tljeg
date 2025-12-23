@@ -2,7 +2,7 @@ export default function FAQ() {
   return (
     <section className="grid gap-6">
       <header className="grid gap-2">
-  <h1 className="text-2xl font-bold doto-base doto-700">FAQ</h1>
+        <h1 className="text-2xl font-bold font-humanist">FAQ</h1>
         <p className="text-ink-700 text-sm">The FAQ is your reassurance file. When doubts pop up, this is where you can flip back and remember why this works.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
           The FAQ is your reassurance file. When doubts pop up, this is where you can flip back and remember why this works, what to expect, and how to handle common bumps. You won't need it every time, but when your mind gets noisy, it's here to remind you of the bigger picture.

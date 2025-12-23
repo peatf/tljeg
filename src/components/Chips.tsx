@@ -6,21 +6,21 @@ type Chip = {
 };
 
 function getSourceLabel(source: 'seed' | 'user' | undefined): string {
-  if (source === 'seed') return 'anchor';
-  if (source === 'user') return 'user';
+  // Hide source labels from regular users - only visible in debug mode
+  // Previously showed "(anchor)" and "(user)" which added visual noise
   return '';
 }
 
 export function ChipList({ chips, onSelect }: { chips: Chip[]; onSelect?: (c: Chip) => void }) {
   const debugMode = typeof window !== 'undefined' && localStorage.getItem('mlDebug') === 'true';
-  
+
   return (
     <div className="flex flex-wrap gap-2">
       {chips.map((c) => {
         const sourceLabel = getSourceLabel(c.source);
         const isAnchor = c.source === 'seed';
         const methodLabel = debugMode && c.method ? c.method : '';
-        
+
         return (
           <button
             key={c.id}

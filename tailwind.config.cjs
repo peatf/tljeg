@@ -5,12 +5,12 @@ module.exports = {
     extend: {
       colors: {
         bone: {
-          50: '#fafbec',
-          100: '#fafaf2',
-          200: '#e1e1d7',
-          300: '#afafa7',
-          400: '#7c7d76',
-          500: '#4b4c47'
+          50: '#faf8f5',
+          100: '#f2eee6',
+          200: '#e6dfcf',
+          300: '#d6cbb1',
+          400: '#c5b598',
+          500: '#b4a07f'
         },
         ink: {
           50: '#f5f6f7',
@@ -35,3 +35,4 @@ module.exports = {
   },
   plugins: []
 };
+

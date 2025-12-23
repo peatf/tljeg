@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { exportAll, importAll, type Dump, exportUserFriendly } from '../storage/export';
+import { exportAll, importAll, type Dump } from '../storage/export';
 import { db } from '../storage/db';
 import { listContexts, listRuntimeSpecs } from '../storage/storage';
 import InlineHelp from '../components/InlineHelp';
-import InputPanel from '../components/ui/InputPanel';
 
 export default function StorageReveal() {
   const [status, setStatus] = useState<string>('');
@@ -17,10 +16,9 @@ export default function StorageReveal() {
   const [traitOptions, setTraitOptions] = useState<string[]>([]);
   const [fromDate, setFromDate] = useState<string>('');
   const [toDate, setToDate] = useState<string>('');
-  const [groupBy, setGroupBy] = useState<'none' | 'trait' | 'week'>('none');
+  const [groupBy, setGroupBy] = useState<'none' | 'trait' | 'date'>('none');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [confirmDeleteText, setConfirmDeleteText] = useState('');
-  const [humanizedCounts, setHumanizedCounts] = useState<{ overlaps: number; principles: number; microActs: number }>({ overlaps: 0, principles: 0, microActs: 0 });
 
   useEffect(() => {
     (async () => {
@@ -39,7 +37,7 @@ export default function StorageReveal() {
         runtimeSpecs: Math.max(0, ...runtimeSpecs.map((e: any) => e.created_at || 0)),
         releaseNotes: Math.max(0, ...releaseNotes.map((e: any) => e.timestamp || 0))
       };
-      setPerTableModified(Object.fromEntries(Object.entries(tableMods).map(([k, v]) => [k, v ? new Date(v).toLocaleString() : '—'])));
+      setPerTableModified(Object.fromEntries(Object.entries(tableMods).map(([k, v]) => [k, v ? new Date(v).toLocaleString() : '--'])));
       const maxTs = Math.max(
         0,
         ...userEntries.map((e: any) => e.timestamp || 0),
@@ -47,30 +45,18 @@ export default function StorageReveal() {
         ...runtimeSpecs.map((e: any) => e.created_at || 0),
         ...releaseNotes.map((e: any) => e.timestamp || 0)
       );
-      setLastModified(maxTs ? new Date(maxTs).toLocaleString() : '—');
+      setLastModified(maxTs ? new Date(maxTs).toLocaleString() : '--');
     })();
   }, []);
 
   // Load contexts and specs for display
   useEffect(() => {
-    (async () => {
-      const [contextsArr, specsArr] = await Promise.all([
-        listContexts(),
-        listRuntimeSpecs()
-      ]);
-      
-      setContexts(contextsArr);
-      const traits = Array.from(new Set(contextsArr.map((c: any) => c.trait).filter(Boolean)));
+    listContexts().then((arr) => {
+      setContexts(arr);
+      const traits = Array.from(new Set(arr.map((c: any) => c.trait).filter(Boolean)));
       setTraitOptions(traits.sort((a, b) => String(a).localeCompare(String(b))));
-      setSpecs(specsArr);
-      
-      // Compute humanized counts
-      const overlaps = contextsArr.filter((c: any) => c.content?.overlap?.trim()).length;
-      const principles = new Set(specsArr.map((s: any) => s.principle?.toLowerCase().trim()).filter(Boolean)).size;
-      const microActs = specsArr.reduce((total: number, s: any) => total + (s.microActs?.length || 0), 0);
-      
-      setHumanizedCounts({ overlaps, principles, microActs });
-    })();
+    });
+    listRuntimeSpecs().then(setSpecs);
   }, []);
 
   const fromTs = useMemo(() => (fromDate ? new Date(fromDate + 'T00:00:00').getTime() : 0), [fromDate]);
@@ -93,20 +79,7 @@ export default function StorageReveal() {
     if (groupBy === 'none') return { All: filteredContexts } as Record<string, any[]>;
     const groups: Record<string, any[]> = {};
     for (const c of filteredContexts) {
-      let key: string;
-      if (groupBy === 'trait') {
-        key = c.trait || '—';
-      } else if (groupBy === 'week') {
-        const date = new Date(c.created_at || 0);
-        const year = date.getFullYear();
-        const week = Math.ceil((date.getTime() - new Date(year, 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000));
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        const weekStr = weekStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        key = `Week of ${weekStr} (${year}-W${week.toString().padStart(2, '0')})`;
-      } else {
-        key = new Date(c.created_at || 0).toDateString();
-      }
+      const key = groupBy === 'trait' ? (c.trait || 'Untagged') : new Date(c.created_at || 0).toDateString();
       if (!groups[key]) groups[key] = [];
       groups[key].push(c);
     }
@@ -141,22 +114,6 @@ export default function StorageReveal() {
     }
   }
 
-  async function handleExportSummary() {
-    try {
-      const blob = await exportUserFriendly();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const date = new Date().toISOString().slice(0, 10);
-      a.download = `tja-summary-${date}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setStatus('Downloaded your summary.');
-    } catch (e) {
-      setStatus('Summary download failed');
-    }
-  }
-
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -188,7 +145,7 @@ export default function StorageReveal() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tja-entries-${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `tja-entries-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -196,34 +153,24 @@ export default function StorageReveal() {
   return (
     <section className="grid gap-4">
       <header className="grid gap-2">
-  <h1 className="text-2xl font-bold doto-base doto-700">Manage your saved guides</h1>
+        <h1 className="text-2xl font-bold font-humanist">Manage your saved guides</h1>
         <p className="text-ink-700 text-sm">Keep, download, or remove versions of your guide. Everything you save stays private on your device unless you choose to export it.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
           Storage is the mirror of your becoming. Every piece of evidence, principle, and action you save here turns into a library of you. When you revisit it, you'll see patterns: traits that keep circling back, shifts that spark the biggest changes, proof that your identity is evolving over time.
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>
       </header>
-      {/* STG-3: Humanized Counts Summary */}
-      <div className="p-4 bg-bone-50 border rounded-lg">
-        <p className="text-sm text-ink-700">
-          You've logged {humanizedCounts.overlaps} overlaps, {humanizedCounts.principles} principles, {humanizedCounts.microActs} micro-acts.
-        </p>
-        <p className="text-xs text-ink-600 mt-1">Last updated: {lastModified}</p>
-      </div>
-      
       <p className="text-ink-700">Download or restore your saved copies. Everything stays on your device.</p>
       <div className="flex gap-3 flex-wrap items-center">
         <button className="px-4 py-2 border rounded" onClick={handleExport} aria-label="Download a copy">Download a copy</button>
         <InlineHelp>Downloads a backup file (JSON) of your data. Keep it private. You can restore it later with “Upload a saved copy”.</InlineHelp>
-        <button className="px-4 py-2 border rounded" onClick={handleExportSummary} aria-label="Download Summary PDF">Download Summary (PDF)</button>
-        <InlineHelp>Downloads a clean, human-readable PDF of your journey — traits, evidence, plans, timeline, and patterns.</InlineHelp>
         <label className="px-4 py-2 border rounded cursor-pointer" aria-label="Upload a saved copy">
           Upload a saved copy
           <input type="file" accept="application/json" className="sr-only" onChange={handleImport} />
         </label>
         <InlineHelp>Restores a backup you previously downloaded. It replaces current data with what’s in the file.</InlineHelp>
-        <button className="px-4 py-2 border rounded" onClick={handleExportCSV} aria-label="Download entries CSV">Download entries (CSV)</button>
-        <InlineHelp>Exports a spreadsheet-friendly file with your entries only. Good for analysis in Sheets/Excel.</InlineHelp>
+        <button className="px-4 py-2 border rounded" onClick={handleExportCSV} aria-label="Download spreadsheet">Download Spreadsheet</button>
+        <InlineHelp>Exports your entries as a spreadsheet. Good for analysis in Sheets or Excel.</InlineHelp>
         <button className="px-4 py-2 border rounded" onClick={() => { setShowDeleteModal(true); setConfirmDeleteText(''); }} aria-label="Delete all data">Delete all data</button>
         <InlineHelp>Removes everything saved on this device. This cannot be undone. Use only if you’re sure.</InlineHelp>
       </div>
@@ -266,17 +213,31 @@ export default function StorageReveal() {
           <InlineHelp>Overwrites the selected table with data from a JSON file. Proceed carefully.</InlineHelp>
         </div>
       </details>
-      <details className="grid gap-2">
-        <summary className="font-semibold cursor-pointer select-none">Technical details</summary>
-        <div>
-          <h3 className="font-semibold mt-2">Raw counts</h3>
-          <ul className="text-sm text-ink-700 grid grid-cols-2 sm:grid-cols-3 gap-x-6">
-            {Object.entries(counts).map(([name, count]) => (
-              <li key={name}>{name}: {count} <span className="text-slate-500">(last: {perTableModified[name] || '—'})</span></li>
-            ))}
-          </ul>
-        </div>
-      </details>
+      <div>
+        <h2 className="font-semibold mt-2">Your Practice History</h2>
+        <ul className="text-sm text-ink-700 grid grid-cols-2 sm:grid-cols-3 gap-x-6">
+          {Object.entries(counts)
+            .filter(([name]) => !['embeddings', 'audio'].includes(name))
+            .map(([name, count]) => {
+              const friendlyNames: Record<string, string> = {
+                userEntries: 'Entries',
+                traits: 'Traits',
+                contexts: 'Evidence',
+                runtimeSpecs: 'Practice Plans',
+                releaseNotes: 'Updates'
+              };
+              const lastMod = perTableModified[name];
+              const lastText = lastMod && lastMod !== '--' ? `Updated ${lastMod}` : 'No entries yet';
+              return (
+                <li key={name}>
+                  {friendlyNames[name] || name}: {count}
+                  <span className="text-slate-500 text-xs ml-1">({lastText})</span>
+                </li>
+              );
+            })}
+        </ul>
+        <p className="text-sm text-ink-600 mt-2">Last modified: {lastModified}</p>
+      </div>
       {/* STG-1 Filters */}
       <div className="grid gap-2 border rounded p-3">
         <h2 className="font-semibold">Filter by trait or date</h2>
@@ -301,9 +262,9 @@ export default function StorageReveal() {
           <div className="grid">
             <label className="text-sm" htmlFor="group">Group by</label>
             <select id="group" className="border p-2 rounded" value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)} aria-label="Group by">
-              <option value="none">No grouping</option>
-              <option value="trait">Group by Trait</option>
-              <option value="week">Group by Week</option>
+              <option value="none">None</option>
+              <option value="trait">Trait</option>
+              <option value="date">Date</option>
             </select>
           </div>
           {(traitFilter || fromDate || toDate) && (
@@ -356,12 +317,13 @@ export default function StorageReveal() {
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 grid gap-3">
             <h2 id="delete-title" className="text-lg font-semibold">Delete all data?</h2>
             <p className="text-sm text-ink-700">This permanently deletes everything saved on this device. Type DELETE to confirm.</p>
-            <InputPanel
-              label="CONFIRM"
+            <input
+              className="border p-2 rounded"
               value={confirmDeleteText}
-              onChange={(e) => setConfirmDeleteText((e.target as HTMLInputElement).value)}
+              onChange={(e) => setConfirmDeleteText(e.target.value)}
               placeholder="Type DELETE"
               aria-label="Type DELETE to confirm"
+              autoFocus
             />
             <div className="flex gap-2 justify-end mt-2">
               <button className="px-3 py-2 border rounded" onClick={() => setShowDeleteModal(false)} aria-label="Cancel delete">Cancel</button>

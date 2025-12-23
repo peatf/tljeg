@@ -1,32 +1,46 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
-import StepTracker from '../components/StepTracker';
 import { addContext, listContexts, deleteContext, listEntries } from '../storage/storage';
 import { ingestUserText } from '../ml';
-import StackedButton from '../components/ui/StackedButton';
-import InputPanel from '../components/ui/InputPanel';
-import { prefetchScene } from '../utils/prefetch';
 
-export default function Calibration() {
+// Evocative context options for rehearsal
+const REHEARSAL_CONTEXTS = [
+  'Morning coffee',
+  'Kitchen',
+  'Commute',
+  'Waiting in line',
+  'Before opening email',
+  'Walking to the car',
+  'Bedtime',
+];
+
+export default function Grounding() {
   const [searchParams] = useSearchParams();
   const focusProof = searchParams.get('focus') === 'proof';
   const proofTextareaRef = useRef<HTMLTextAreaElement>(null);
-  
+
   const [proof, setProof] = useState('');
   const [rehearsalContext, setRehearsalContext] = useState('');
-  const [rehearsalCustom, setRehearsalCustom] = useState('');
-  const [friction, setFriction] = useState('');
+  const [customContext, setCustomContext] = useState('');
+  const [stretch, setStretch] = useState('');
   const [proofEntries, setProofEntries] = useState<any[]>([]);
   const [rehearsalEntries, setRehearsalEntries] = useState<any[]>([]);
-  const [frictionEntries, setFrictionEntries] = useState<any[]>([]);
+  const [stretchEntries, setStretchEntries] = useState<any[]>([]);
   const [clarityOverlaps, setClarityOverlaps] = useState<{ id: string; text: string }[]>([]);
   const [overlapExpansions, setOverlapExpansions] = useState<Record<string, string>>({});
   const [latestTrait, setLatestTrait] = useState<string | null>(null);
   const [rehearse, setRehearse] = useState(false);
+  const [rehearsalComplete, setRehearsalComplete] = useState(false);
   const [status, setStatus] = useState('');
   const [hasProof, setHasProof] = useState(false);
   const [preloadedOverlap, setPreloadedOverlap] = useState<string | null>(null);
+
+  // Progress tracking
+  const proofComplete = proofEntries.length > 0;
+  const rehearsalSaved = rehearsalEntries.length > 0;
+  const stretchSaved = stretchEntries.length > 0;
+  const sectionsComplete = [proofComplete, rehearsalSaved, stretchSaved].filter(Boolean).length;
 
   useEffect(() => {
     loadEntries();
@@ -38,9 +52,9 @@ export default function Calibration() {
         const obj = JSON.parse(raw);
         if (obj && typeof obj.text === 'string') setPreloadedOverlap(obj.text);
       }
-    } catch {}
+    } catch { }
   }, []);
-  
+
   // Auto-focus proof field when focus=proof parameter is present
   useEffect(() => {
     if (focusProof && proofTextareaRef.current) {
@@ -54,11 +68,11 @@ export default function Calibration() {
     const allContexts = await listContexts();
     const proofs = allContexts.filter(c => c.type === 'proof' || c.type === 'ordinary');
     const rehearsals = allContexts.filter(c => c.type === 'rehearsal');
-    const frictions = allContexts.filter(c => c.type === 'friction');
-    
+    const stretches = allContexts.filter(c => c.type === 'friction');
+
     setProofEntries(proofs);
     setRehearsalEntries(rehearsals);
-    setFrictionEntries(frictions);
+    setStretchEntries(stretches);
     setHasProof(proofs.length > 0);
   }
 
@@ -96,76 +110,77 @@ export default function Calibration() {
 
   async function saveProof() {
     if (!proof.trim()) return;
-    
+
     await addContext(proof, 'proof', latestTrait ?? undefined);
-    
+
     // Ingest context for future ML suggestions
     try {
       await ingestUserText('contexts', proof);
     } catch (error) {
       console.error('Failed to ingest context:', error);
     }
-    
+
     setProof('');
     await loadEntries();
     setStatus('Saved proof.');
-    try { prefetchScene('void'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
   async function saveRehearsal() {
-    const text = rehearsalContext === 'custom' ? rehearsalCustom : rehearsalContext;
-    if (!text.trim() || !hasProof) return;
-    
-    await addContext(text, 'rehearsal', latestTrait ?? undefined);
-    
+    const contextToSave = rehearsalContext === 'custom' ? customContext : rehearsalContext;
+    if (!contextToSave.trim() || !hasProof) return;
+
+    await addContext(contextToSave, 'rehearsal', latestTrait ?? undefined);
+
     try {
-      await ingestUserText('contexts', rehearsalContext);
+      await ingestUserText('contexts', contextToSave);
     } catch (error) {
       console.error('Failed to ingest rehearsal:', error);
     }
-    
+
     setRehearsalContext('');
-    setRehearsalCustom('');
+    setCustomContext('');
+    setRehearsalComplete(false);
     await loadEntries();
     setStatus('Saved rehearsal.');
-    try { prefetchScene('void'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
-  async function saveFriction() {
-    if (!friction.trim() || !hasProof) return;
-    
-    await addContext(friction, 'friction', latestTrait ?? undefined);
-    
-    // Ingest friction for future ML suggestions
+  async function saveStretch() {
+    if (!stretch.trim() || !hasProof) return;
+
+    await addContext(stretch, 'friction', latestTrait ?? undefined);
+
+    // Ingest stretch for future ML suggestions
     try {
-      await ingestUserText('frictions', friction);
+      await ingestUserText('frictions', stretch);
     } catch (error) {
-      console.error('Failed to ingest friction:', error);
+      console.error('Failed to ingest stretch:', error);
     }
-    
-    setFriction('');
+
+    setStretch('');
     await loadEntries();
-    setStatus('Saved friction.');
-    try { prefetchScene('void'); } catch {}
+    setStatus('Saved stretch.');
     setTimeout(() => setStatus(''), 1500);
   }
+
+  const selectedContext = rehearsalContext === 'custom' ? customContext : rehearsalContext;
 
   return (
     <section className="grid gap-6">
-      <StepTracker current="calibration" />
       {preloadedOverlap && (
         <div className="p-3 border rounded bg-bone-50 text-sm text-ink-800" aria-live="polite">
-          From Clarity: “{preloadedOverlap}”
+          From Clarity: "{preloadedOverlap}"
         </div>
       )}
       <header className="grid gap-2">
-  <h1 className="text-2xl font-bold doto-base doto-700">Calibration</h1>
-        <p className="text-ink-700 text-sm">Calibration grounds clarity in ordinary life. Proof keeps the shift believable.</p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold font-humanist">Grounding</h1>
+          <span className="text-sm text-ink-500">{sectionsComplete} of 3 complete</span>
+        </div>
+        <p className="text-ink-700 text-sm">Making clarity real in everyday life. Proof keeps the shift believable.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
-          Clarity without evidence is fragile. Calibration is how you ground it into everyday life. Rather than using dramatic grand gestures, you calibrate to new ways of being through tiny signals: the way you answer an email, how you move in your kitchen, the choices you make mid-commute.
-          {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
+          Clarity without evidence is fragile. Grounding is how you anchor it into everyday life. Rather than dramatic grand gestures, you calibrate to new ways of being through tiny signals: the way you answer an email, how you move in your kitchen, the choices you make mid-commute.
         </div>
       </header>
 
@@ -182,23 +197,23 @@ export default function Calibration() {
                 onChange={(e) => setOverlapExpansions((prev) => ({ ...prev, [o.id]: e.target.value }))}
                 className="border p-2 rounded min-h-[60px]"
                 placeholder="Name one ordinary place this already shows up..."
-                aria-label="Overlap expansion input"
+                aria-label="Connection expansion input"
               />
-              <p className="text-sm">How does this overlap prove that this identity is already alive in you?</p>
+              <p className="text-sm">How does this connection prove that this identity is already alive in you?</p>
               <button
                 className="px-3 py-1.5 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 justify-self-start"
                 onClick={async () => {
                   const text = overlapExpansions[o.id]?.trim();
                   if (!text) return;
                   await addContext(text, 'proof', latestTrait ?? undefined);
-                  try { await ingestUserText('contexts', text); } catch {}
+                  try { await ingestUserText('contexts', text); } catch { }
                   setOverlapExpansions((prev) => ({ ...prev, [o.id]: '' }));
                   await loadEntries();
                   setStatus('Saved to Evidence.');
                   setTimeout(() => setStatus(''), 1500);
                 }}
                 disabled={!overlapExpansions[o.id]?.trim()}
-                aria-label="Save overlap expansion as evidence"
+                aria-label="Save connection as evidence"
               >
                 Save to Evidence
               </button>
@@ -210,26 +225,32 @@ export default function Calibration() {
       {/* Section 1: Spot Your Proof */}
       <div className="grid gap-3 p-4 border rounded-lg">
         <div>
-          <h2 className="font-semibold text-lg">Proof that it's already you</h2>
-          <p className="text-sm text-ink-600">Capture one small way you already lived this trait today.</p>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-lg">Proof that it's already you</h2>
+            {proofComplete && <span className="text-green-600 text-sm">✓</span>}
+          </div>
+          {latestTrait ? (
+            <p className="text-sm text-ink-600">You're grounding <strong>{latestTrait}</strong>. Capture one small way you already lived this trait today.</p>
+          ) : (
+            <p className="text-sm text-ink-600">Capture one small way you already lived this trait today.</p>
+          )}
         </div>
-        <InputPanel
-          as="textarea"
-          label="PROOF"
-          ref={proofTextareaRef as any}
+        <textarea
+          ref={proofTextareaRef}
           value={proof}
-          onChange={(e) => setProof((e.target as HTMLTextAreaElement).value)}
+          onChange={(e) => setProof(e.target.value)}
+          className={`border p-3 rounded min-h-[80px] ${focusProof ? 'border-purple-500 ring-2 ring-purple-200' : ''}`}
           placeholder="Ex: I calmly answered an email while tired."
           aria-label="Proof input"
         />
-        <StackedButton 
-          className="rect-btn--sm"
+        <button
+          className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800"
           onClick={saveProof}
           disabled={!proof.trim()}
           aria-label="Save proof"
         >
-          SAVE PROOF
-        </StackedButton>
+          Save Proof
+        </button>
         {proofEntries.length > 0 && (
           <div className="mt-2">
             <h3 className="text-sm text-ink-600 mb-2">Saved Proofs</h3>
@@ -256,51 +277,89 @@ export default function Calibration() {
       {/* Section 2: Practice in Daily Life */}
       <div className={`grid gap-3 p-4 border rounded-lg ${!hasProof ? 'opacity-50' : ''}`}>
         <div>
-          <h2 className="font-semibold text-lg">Rehearse your trait in ordinary life</h2>
-          <p className="text-sm text-ink-600">Pick a tiny moment (kitchen, inbox, commute). Practice embodying it for 60 seconds.</p>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-lg">Rehearse your trait in ordinary life</h2>
+            {rehearsalSaved && <span className="text-green-600 text-sm">✓</span>}
+          </div>
+          <p className="text-sm text-ink-600">Pick a tiny, ordinary moment. This is where your new self comes alive.</p>
         </div>
-        <select
-          value={rehearsalContext}
-          onChange={(e) => setRehearsalContext(e.target.value)}
-          className="border p-3 rounded"
-          disabled={!hasProof}
-          aria-label="Daily context selection"
-        >
-          <option value="">Choose a context...</option>
-          <option value="kitchen">Kitchen</option>
-          <option value="commute">Commute</option>
-          <option value="email">Email</option>
-          <option value="bedtime">Bedtime</option>
-          <option value="custom">Custom</option>
-        </select>
+
+        {/* Chip-based context selection */}
+        <div className="flex flex-wrap gap-2">
+          {REHEARSAL_CONTEXTS.map((ctx) => {
+            const active = rehearsalContext === ctx;
+            return (
+              <button
+                key={ctx}
+                className={`px-3 py-2 rounded-full border text-sm transition-colors ${active
+                  ? 'bg-purple-50 border-purple-300 text-purple-800'
+                  : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                onClick={() => setRehearsalContext(active ? '' : ctx)}
+                disabled={!hasProof}
+                aria-pressed={active}
+                aria-label={`Context: ${ctx}`}
+              >
+                {active ? '✔ ' : ''}{ctx}
+              </button>
+            );
+          })}
+          <button
+            className={`px-3 py-2 rounded-full border text-sm transition-colors ${rehearsalContext === 'custom'
+              ? 'bg-purple-50 border-purple-300 text-purple-800'
+              : 'border-slate-300 hover:border-slate-400'
+              }`}
+            onClick={() => setRehearsalContext(rehearsalContext === 'custom' ? '' : 'custom')}
+            disabled={!hasProof}
+            aria-pressed={rehearsalContext === 'custom'}
+          >
+            {rehearsalContext === 'custom' ? '✔ ' : ''}Custom
+          </button>
+        </div>
+
         {rehearsalContext === 'custom' && (
-          <InputPanel
-            label="CUSTOM CONTEXT"
-            placeholder="Describe your custom context..."
-            value={rehearsalCustom}
-            onChange={(e) => setRehearsalCustom((e.target as HTMLInputElement).value)}
+          <input
+            type="text"
+            placeholder="Describe your moment..."
+            value={customContext}
+            className="border p-3 rounded"
+            onChange={(e) => setCustomContext(e.target.value)}
             aria-label="Custom context input"
           />
         )}
-        <div className="flex gap-2">
-          <StackedButton
-            className="rect-btn--sm"
-            onClick={saveRehearsal}
-            disabled={!hasProof || !((rehearsalContext === 'custom' ? rehearsalCustom : rehearsalContext).trim())}
-            aria-label="Save rehearsal"
-          >
-            SAVE REHEARSAL
-          </StackedButton>
-          <button 
-            className="px-4 py-2 border rounded" 
+
+        <div className="flex gap-2 flex-wrap">
+          <button
+            className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2"
             onClick={() => setRehearse(true)}
-            disabled={!hasProof || !((rehearsalContext === 'custom' ? rehearsalCustom : rehearsalContext).trim())}
+            disabled={!hasProof || !selectedContext.trim()}
             aria-label="Start 60 second rehearsal"
           >
-            Start 60s
+            <span aria-hidden>▶</span> Start 60-second practice
           </button>
+          {rehearsalComplete && (
+            <button
+              className="px-4 py-2 border border-ink-900 text-ink-900 rounded hover:bg-bone-50"
+              onClick={saveRehearsal}
+              disabled={!hasProof || !selectedContext.trim()}
+              aria-label="Save rehearsal"
+            >
+              Save Rehearsal
+            </button>
+          )}
         </div>
-        {rehearse && <Timer seconds={60} label="60 second rehearsal" onDone={() => setRehearse(false)} />}
+
+        {rehearse && (
+          <Timer
+            seconds={60}
+            label="60 second rehearsal"
+            onDone={() => {
+              setRehearse(false);
+              setRehearsalComplete(true);
+            }}
+          />
+        )}
+
         {rehearsalEntries.length > 0 && (
           <div className="mt-2">
             <h3 className="text-sm text-ink-600 mb-2">Saved Rehearsals</h3>
@@ -324,32 +383,39 @@ export default function Calibration() {
         )}
       </div>
 
-      {/* Section 3: Clear Tomorrow's Friction */}
+      {/* Section 3: Where Are You Being Stretched? (philosophical reframe) */}
       <div className={`grid gap-3 p-4 border rounded-lg ${!hasProof ? 'opacity-50' : ''}`}>
         <div>
-          <h2 className="font-semibold text-lg">Make it easier</h2>
-          <p className="text-sm text-ink-600">Name one obstacle you can remove tomorrow so this identity feels natural.</p>
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-lg">Where Are You Being Stretched?</h2>
+            {stretchSaved && <span className="text-green-600 text-sm">✓</span>}
+          </div>
+          <p className="text-sm text-ink-600">
+            Do you feel drawn toward a choice or action that also brings up some tension? This edge is where growth lives. You don't have to force anything - just notice if something is calling you forward.
+          </p>
         </div>
-        <InputPanel
-          label="FRICTION"
-          value={friction}
-          onChange={(e) => setFriction((e.target as HTMLInputElement).value)}
-          placeholder="Ex: put phone in another room before bed."
-          aria-label="Friction input"
+        <input
+          type="text"
+          value={stretch}
+          onChange={(e) => setStretch(e.target.value)}
+          className="border p-3 rounded"
+          placeholder="Ex: I feel pulled to pay my assistant more. It's a stretch, but it feels aligned."
+          disabled={!hasProof}
+          aria-label="Stretch input"
         />
-        <StackedButton 
-          className="rect-btn--sm"
-          onClick={saveFriction}
-          disabled={!hasProof || !friction.trim()}
-          aria-label="Save friction"
+        <button
+          className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800"
+          onClick={saveStretch}
+          disabled={!hasProof || !stretch.trim()}
+          aria-label="Save stretch"
         >
-          SAVE FRICTION
-        </StackedButton>
-        {frictionEntries.length > 0 && (
+          Save This Edge
+        </button>
+        {stretchEntries.length > 0 && (
           <div className="mt-2">
-            <h3 className="text-sm text-ink-600 mb-2">Saved Frictions</h3>
+            <h3 className="text-sm text-ink-600 mb-2">Saved Edges</h3>
             <ul className="space-y-1">
-              {frictionEntries.map((f: any) => (
+              {stretchEntries.map((f: any) => (
                 <li key={f.id} className="flex items-start gap-2 p-2 bg-bone-50 rounded">
                   <div className="flex-1">
                     <div className="text-sm flex items-center gap-2">

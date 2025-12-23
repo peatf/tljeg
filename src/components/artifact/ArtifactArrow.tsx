@@ -28,13 +28,13 @@ function perpendicularOffset(a: Point, b: Point, center: Point, magnitude = 0.25
 export function pathFor(from: Point, to: Point, center: Point): string {
   const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
   const offset = perpendicularOffset(from, to, center, 0.2);
-  const c1 = { 
-    x: from.x + (mid.x - from.x) * 0.5 + offset.x, 
-    y: from.y + (mid.y - from.y) * 0.5 + offset.y 
+  const c1 = {
+    x: from.x + (mid.x - from.x) * 0.5 + offset.x,
+    y: from.y + (mid.y - from.y) * 0.5 + offset.y
   };
-  const c2 = { 
-    x: to.x + (mid.x - to.x) * 0.5 + offset.x, 
-    y: to.y + (mid.y - to.y) * 0.5 + offset.y 
+  const c2 = {
+    x: to.x + (mid.x - to.x) * 0.5 + offset.x,
+    y: to.y + (mid.y - to.y) * 0.5 + offset.y
   };
   return `M ${from.x},${from.y} C ${c1.x},${c1.y} ${c2.x},${c2.y} ${to.x},${to.y}`;
 }
@@ -98,16 +98,20 @@ interface ArtifactArrowProps {
   pathData: string;
   className?: string;
   onNavigate?: (from: string, to: string) => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   pixel?: boolean;
   polyPoints?: Point[];
   usePolyline?: boolean;
 }
 
-export function ArtifactArrow({ 
-  connection, 
-  pathData, 
+export function ArtifactArrow({
+  connection,
+  pathData,
   className = '',
   onNavigate,
+  onMouseEnter,
+  onMouseLeave,
   pixel = false,
   polyPoints,
   usePolyline = false
@@ -122,7 +126,7 @@ export function ArtifactArrow({
 
   const handleClick = () => {
     onNavigate?.(connection.from, connection.to);
-    
+
     trackArtifactMapNavigate({
       from: connection.from,
       to: connection.to,
@@ -141,60 +145,64 @@ export function ArtifactArrow({
   };
 
   const isAnimated = motionPrefs.shouldAnimate('arrow');
-  const arrowVariants = pixel
-    ? {
-        default: { pathLength: 1, strokeDashoffset: 0, strokeDasharray: '3 3' },
-        animated: { pathLength: 1, strokeDashoffset: 0, strokeDasharray: '3 3' },
-        hover: { stroke: '#212121', strokeWidth: 2 }
-      }
-    : {
-        default: {
-          pathLength: 1,
-          strokeDasharray: '0, 100',
-          strokeDashoffset: 0
-        },
-        animated: {
-          pathLength: isAnimated ? [0, 1] : 1,
-          strokeDasharray: isAnimated ? '5, 10' : '0, 100',
-          strokeDashoffset: isAnimated ? [0, -15] : 0
-        },
-        hover: {
-          stroke: '#1f2937',
-          strokeWidth: 2.5
-        }
-      };
 
-  const transition = {
-    pathLength: { duration: 0.6, ease: 'easeInOut' },
-    strokeDashoffset: { 
-      duration: 2, 
-      repeat: motionPrefs.shouldAnimate('arrow') ? Infinity : 0,
-      ease: 'linear'
+  const arrowVariants = {
+    initial: {
+      pathLength: 0,
+      opacity: 0
+    },
+    default: {
+      pathLength: 1,
+      opacity: 1,
+      stroke: '#8a94a3', // ink-400
+      strokeWidth: pixel ? 3 : 1.5,
+      transition: {
+        pathLength: { duration: 0.8, ease: "easeOut" },
+        opacity: { duration: 0.4 }
+      }
+    },
+    drift: isAnimated ? {
+      strokeDasharray: '4 8',
+      strokeDashoffset: [0, -24],
+      transition: {
+        strokeDashoffset: {
+          duration: 3,
+          repeat: Infinity,
+          ease: "linear"
+        }
+      }
+    } : {},
+    hover: {
+      stroke: '#4b5563', // ink-600
+      strokeWidth: pixel ? 4 : 2.5,
+      transition: { duration: 0.2 }
     }
   };
 
   const commonProps = {
     variants: arrowVariants,
-    initial: 'default' as const,
-    animate: 'animated' as const,
-    whileHover: 'hover' as const,
-    whileFocus: 'hover' as const,
-    transition,
-    stroke: pixel ? 'transparent' : '#64748b',
-    strokeWidth: pixel ? 2.5 : 1.5,
-    strokeDasharray: pixel ? undefined : undefined,
+    initial: 'initial',
+    animate: ['default', 'drift'],
+    whileHover: 'hover',
+    whileFocus: 'hover',
+    stroke: pixel ? 'transparent' : '#8a94a3',
+    strokeWidth: pixel ? 3 : 1.5,
     fill: 'none',
     className: `cursor-pointer focus-visible:outline-none ${className}`,
     onClick: handleClick,
     onKeyDown: handleKeyDown,
+    onMouseEnter,
+    onMouseLeave,
+    onFocus: onMouseEnter,
+    onBlur: onMouseLeave,
     tabIndex: 0,
     role: 'button' as const,
     'aria-label': `Navigate from ${fromNode.label} to ${toNode.label}`,
     style: pixel
       ? ({
-          pointerEvents: 'stroke',
-          strokeOpacity: 0
-        } as CSSProperties)
+        pointerEvents: 'stroke',
+        strokeOpacity: 0
+      } as CSSProperties)
       : undefined
   };
 
@@ -204,15 +212,13 @@ export function ArtifactArrow({
         <motion.polyline
           points={polyPoints.map((p) => `${p.x},${p.y}`).join(' ')}
           {...commonProps}
-          // No SVG marker in pixel mode; heads are drawn on canvas
-          markerEnd={undefined}
+          markerEnd="url(#pixel-arrowhead)"
         />
       ) : (
         <motion.path
           d={pathData}
           {...commonProps}
-          // When pixel mode is on, we draw heads on the canvas; hide SVG marker
-          markerEnd={pixel ? undefined : "url(#arrowhead)"}
+          markerEnd="url(#arrowhead)"
         />
       )}
     </g>

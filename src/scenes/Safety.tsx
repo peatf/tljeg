@@ -1,19 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import Timer from '../components/Timer';
-import StepTracker from '../components/StepTracker';
-import SaveBanner from '../components/SaveBanner';
 import SafetyIllustration from '../assets/safety.svg?react';
-import avatarWebp from '../assets/avatar.webp';
 import { ChipList } from '../components/Chips';
-import { addEntry, listEntries } from '../storage/storage';
+import { addEntry } from '../storage/storage';
 import { getSuggestions } from '../ml';
-import StackedButton from '../components/ui/StackedButton';
-import InputPanel from '../components/ui/InputPanel';
-import MobileActions from '../components/MobileActions';
-import { loadAutosave, useAutosaveForm } from '../hooks/useAutosaveForm';
-import TimerButton from '../components/TimerButton';
-import DefinitionPopover from '../components/DefinitionPopover';
-import { prefetchScene } from '../utils/prefetch';
 
 export default function Safety() {
   const [consent, setConsent] = useState('');
@@ -25,54 +15,23 @@ export default function Safety() {
   const [partName, setPartName] = useState('');
   const [partNeed, setPartNeed] = useState('');
   const [status, setStatus] = useState('');
-  const [justSaved, setJustSaved] = useState(false);
   const [bodyReflection, setBodyReflection] = useState('');
   const [customEnv, setCustomEnv] = useState('');
   const [currentScanCue, setCurrentScanCue] = useState(0);
   const [loading, setLoading] = useState(false);
-  const hasBodyRead = (bodyReflection || '').trim().length > 0;
-  const hasNeedWhenNotYet = consent !== 'not yet' || (needsText.trim().length > 0 || partNeed.trim().length > 0);
 
   useEffect(() => {
-    getSuggestions('needs', needsText).then(result => setChips(result.items)).catch(() => setChips([]));
-  }, [needsText]);
-
-  // Prefill last saved Safety entry so content persists on return
-  useEffect(() => {
-    (async () => {
-      try {
-        const entries = await listEntries('safety');
-        if (!entries || entries.length === 0) return;
-        const last = entries.reduce((a: any, b: any) => (a.timestamp > b.timestamp ? a : b));
-        const c = last.content || {};
-        if (typeof c.bodyReflection === 'string') setBodyReflection(c.bodyReflection);
-        if (typeof c.consent === 'string') setConsent(c.consent);
-        if (Array.isArray(c.env)) setEnv(c.env);
-        if (typeof c.needsText === 'string') setNeedsText(c.needsText);
-        if (typeof c.partName === 'string') setPartName(c.partName);
-        if (typeof c.partNeed === 'string') setPartNeed(c.partNeed);
-      } catch {}
-      // Fallback: restore unsaved draft from localStorage autosave
-      try {
-        const draft = loadAutosave<any>('safety');
-        if (draft) {
-          if (typeof draft.bodyReflection === 'string') setBodyReflection(draft.bodyReflection);
-          if (typeof draft.consent === 'string') setConsent(draft.consent);
-          if (Array.isArray(draft.env)) setEnv(draft.env);
-          if (typeof draft.needsText === 'string') setNeedsText(draft.needsText);
-          if (typeof draft.partName === 'string') setPartName(draft.partName);
-          if (typeof draft.partNeed === 'string') setPartNeed(draft.partNeed);
-        }
-      } catch {}
-    })();
-  }, []);
+    if (consent === 'not yet') {
+      getSuggestions('needs', needsText).then(result => setChips(result.items)).catch(() => setChips([]));
+    }
+  }, [needsText, consent]);
 
   // Rotating scan cues during 30s timer
   useEffect(() => {
     if (!scanStarted) return;
     const cues = [
       "Notice your breath...",
-      "Feel your feet on the ground...", 
+      "Feel your feet on the ground...",
       "Check in with your shoulders...",
       "Sense the space around you...",
       "Listen to what your body needs..."
@@ -82,9 +41,6 @@ export default function Safety() {
     }, 6000); // Change every 6 seconds during 30s scan
     return () => clearInterval(interval);
   }, [scanStarted]);
-
-  // Autosave draft locally for resilience
-  useAutosaveForm('safety', { bodyReflection, consent, env, needsText, partName, partNeed });
 
   async function save() {
     setLoading(true);
@@ -102,9 +58,6 @@ export default function Safety() {
         }
       }
       setStatus('Saved.');
-      setJustSaved(true);
-      // Prefetch next scene assets for snappier navigation
-      prefetchScene('clarity');
       setTimeout(() => setStatus(''), 1500);
     } finally {
       setLoading(false);
@@ -113,203 +66,191 @@ export default function Safety() {
 
   return (
     <section className="grid gap-6">
-      <StepTracker current="safety" />
       <header className="grid gap-2">
-  <h1 className="text-2xl font-bold doto-base doto-700">Safety</h1>
+        <h1 className="text-2xl font-bold font-humanist">Safety</h1>
         <p className="text-ink-700 text-sm">Shifts only land if they feel safe. Begin by grounding in internal safety.</p>
         <div className="mx-auto" role="img" aria-label="Safety illustration" title="Safety illustration">
           <SafetyIllustration />
         </div>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
-          Change only roots when your system feels safe enough to let it land. If you try to push transformation from a body still vibrating with stress, it's like planting seeds in pebbles, nothing takes. This stage is where you check your environment, name what you need, and give yourself permission to open.
-          {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
+          Change only roots when your system feels safe enough to let it land. If you try to push transformation from a body still vibrating with stress, it's like planting seeds in pebbles: nothing takes. This stage is where you check your environment, name what you need, and give yourself permission to open.
         </div>
       </header>
-      {/* SAF-1: Body awareness comes first and is required */}
-      <div className="grid gap-2">
-        <label htmlFor="body-reflection" className="text-sm font-medium">Where in your body do you feel ready/not ready?</label>
-        <InputPanel
-          as="textarea"
-          label="BODY READINESS"
-          id="body-reflection"
-          value={bodyReflection}
-          onChange={(e) => setBodyReflection((e.target as HTMLTextAreaElement).value)}
-          aria-label="Body readiness reflection"
-          placeholder="e.g., Jaw is tight, chest feels open, belly needs softness…"
-          helperText="Required before moving on. A brief body read helps set a safe pace."
-        />
-      </div>
-      <p className="text-ink-700 max-w-prose">After a quick body read, continue below. If any part says “not yet,” name its need.
-        <DefinitionPopover term="Friction">A removable obstacle that makes a desired state harder. Example: Put phone in another room at bedtime.</DefinitionPopover>
-      </p>
+      <p className="text-ink-700 max-w-prose">Get comfortable first, then check in with yourself. If you're ready, run a gentle 30-second scan.</p>
 
-      {/* The rest of the flow is gated until a body read exists */}
-      <div className={`${hasBodyRead ? '' : 'opacity-60 pointer-events-none select-none'} grid gap-3`} aria-disabled={!hasBodyRead}>
-        <div className="grid gap-3">
-          <fieldset>
-            <legend className="text-sm font-medium">Consent check-in</legend>
-            <div className="flex gap-4 mt-2">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="consent"
-                  value="yes"
-                  checked={consent === 'yes'}
-                onChange={(e) => setConsent(e.target.value)}
-                  aria-describedby="consent-hint"
-                  disabled={!hasBodyRead}
-                />
-                <span>Yes</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="consent"
-                  value="not yet"
-                  checked={consent === 'not yet'}
-                onChange={(e) => setConsent(e.target.value)}
-                  aria-describedby="consent-hint"
-                  disabled={!hasBodyRead}
-                />
-                <span>Not yet</span>
-              </label>
-            </div>
-          </fieldset>
-          {consent === 'not yet' && (
-            <div className="grid gap-2 mt-2">
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-                Pause. Name what would help you feel safer before moving on.
-              </div>
-              <InputPanel
-                label="WHY NOT YET?"
-                id="consent-reason"
-                value={needsText}
-                onChange={(e) => setNeedsText((e.target as HTMLInputElement).value)}
-                placeholder="What is needed before proceeding?"
-                aria-label="Consent reason"
-                disabled={!hasBodyRead}
-                autoFocus
-              />
-            </div>
-          )}
-          <p id="consent-hint" className="text-xs text-ink-600">If "not yet," consider what is needed before proceeding.</p>
+      {/* Section 1: Prepare Your Space (first in new order) */}
+      <div className="grid gap-2">
+        <p className="text-sm font-medium text-ink-800">Your environment</p>
+        <p className="text-sm text-ink-600">Prepare your space before you begin.</p>
+        <div className="flex flex-wrap gap-2" aria-live="polite">
+          {['Door locked', 'Water nearby', 'Warmth', 'Low light', 'Phone silent'].map((e) => {
+            const active = env.includes(e);
+            return (
+              <button
+                key={e}
+                className={`px-3 py-1 rounded-full border text-sm transition-colors ${active
+                  ? 'bg-green-50 border-green-300 text-green-800'
+                  : 'border-slate-300 hover:border-slate-400'
+                  }`}
+                onClick={() => {
+                  setEnv((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
+                }}
+                aria-pressed={active}
+                aria-label={`Environment option: ${e}`}
+              >
+                {active ? '✔ ' : ''}{e}
+              </button>
+            );
+          })}
         </div>
+        <div className="flex gap-2 items-center mt-2">
+          <input
+            type="text"
+            value={customEnv}
+            onChange={(e) => setCustomEnv(e.target.value)}
+            placeholder="Add your own..."
+            className="border border-slate-300 rounded p-2 flex-1"
+            aria-label="Add custom comfort item"
+          />
+          <button
+            onClick={() => {
+              if (customEnv.trim()) {
+                setEnv(cur => [...cur, customEnv.trim()]);
+                setCustomEnv('');
+              }
+            }}
+            disabled={!customEnv.trim()}
+            className="px-3 py-2 border border-slate-300 rounded disabled:opacity-50"
+            aria-label="Add custom item"
+          >
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* Section 2: Consent check-in (after preparing space) */}
+      <div className="grid gap-3">
+        <fieldset>
+          <legend className="text-sm font-medium">Consent check-in</legend>
+          <p className="text-xs text-ink-600 mb-2">Now that you're settled, are you ready to continue?</p>
+          <div className="flex gap-4 mt-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="consent"
+                value="yes"
+                checked={consent === 'yes'}
+                onChange={(e) => setConsent(e.target.value)}
+                aria-describedby="consent-hint"
+              />
+              <span>Yes</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="consent"
+                value="not yet"
+                checked={consent === 'not yet'}
+                onChange={(e) => setConsent(e.target.value)}
+                aria-describedby="consent-hint"
+              />
+              <span>Not yet</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+
+      {/* Section 3: Name what you need (only if "Not yet" selected) */}
+      {consent === 'not yet' && (
+        <div className="grid gap-3 p-4 border rounded-lg border-amber-200 bg-amber-50/30">
+          <div className="grid gap-2">
+            <p className="text-sm font-medium text-ink-800">Your inner state</p>
+            <label className="text-sm text-ink-600" htmlFor="needs">Name what you need before moving forward</label>
+            <input
+              id="needs"
+              value={needsText}
+              onChange={(e) => setNeedsText(e.target.value)}
+              placeholder="e.g., rest, warmth, quiet (comma to add multiple)"
+              className="border border-slate-300 rounded p-2"
+              aria-label="Needs input"
+              aria-describedby="needs-hint"
+            />
+            <p id="needs-hint" className="text-xs text-ink-600">Suggestions are optional. Choose only what feels kind.</p>
+            <ChipList chips={chips} onSelect={(c) => setNeedsText(c.text)} />
+          </div>
+
+          <div className="grid gap-2">
+            <p className="text-sm text-ink-600">If a part says "not yet," name it and its need:</p>
+            <label htmlFor="part-name" className="text-sm">Part name</label>
+            <input id="part-name" value={partName} onChange={(e) => setPartName(e.target.value)} className="border p-2 rounded" aria-label="Part name" />
+            <label htmlFor="part-need" className="text-sm">What does it need?</label>
+            <input id="part-need" value={partNeed} onChange={(e) => setPartNeed(e.target.value)} className="border p-2 rounded" aria-label="Part need" />
+          </div>
+        </div>
+      )}
+
+      {/* Section 4: Body scan (only visible after consent is "yes" or after acknowledging "not yet") */}
+      {consent && (
         <div className="grid gap-3">
-          <div className="grid gap-3">
-            <TimerButton duration={30} label="Start 30-second scan" onStart={() => setScanStarted(true)} onDone={() => { doneRef.current = true; setScanStarted(false); }} />
-            {scanStarted && (
+          <p className="text-sm text-ink-600">Close your eyes and notice how your body feels right now.</p>
+          <button
+            className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2"
+            onClick={() => setScanStarted(true)}
+            aria-label="Start 30 second scan"
+          >
+            <span aria-hidden>▶</span> Start 30-second scan
+          </button>
+          {scanStarted && (
+            <div className="grid gap-3">
+              <Timer
+                seconds={30}
+                label="30 second scan"
+                onDone={() => {
+                  if (!doneRef.current) {
+                    doneRef.current = true;
+                  }
+                }}
+              />
               <div className="text-center p-3 bg-blue-50 rounded-lg text-blue-800 text-sm italic" aria-live="polite">
                 {["Notice your breath...", "Feel your feet on the ground...", "Check in with your shoulders...", "Sense the space around you...", "Listen to what your body needs..."][currentScanCue]}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+      )}
 
-        <div className="grid gap-2">
-          <p className="text-sm text-ink-600">Supportive Environment</p>
-          <p className="text-xs text-ink-600">Optional: Add anything that makes this space feel better for you (e.g., blanket, open window).</p>
-          <div className="flex flex-wrap gap-2" aria-live="polite">
-            {['Door locked', 'Water nearby', 'Warmth', 'Low light', 'Phone silent'].map((e) => {
-              const active = env.includes(e);
-              return (
-                <button
-                  key={e}
-                  className={`px-3 py-1 rounded-full border text-sm transition-colors ${
-                    active 
-                      ? 'bg-green-50 border-green-300 text-green-800' 
-                      : 'border-slate-300 hover:border-slate-400'
-                  }`}
-                  onClick={() => {
-                    setEnv((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
-                  }}
-                  aria-pressed={active}
-                  aria-label={`Environment setter: ${e}`}
-                  disabled={!hasBodyRead}
-                >
-                  {active ? '✔ ' : ''}{e}
-                </button>
-              );
-            })}
+      {/* Section 5: Body reflection (after scan) */}
+      {consent && (
+        <div className="grid gap-3">
+          <div className="grid gap-2">
+            <label htmlFor="body-reflection" className="text-sm">Where in your body do you feel ready/not ready?</label>
+            <textarea id="body-reflection" value={bodyReflection} onChange={(e) => setBodyReflection(e.target.value)} className="border p-2 rounded min-h-[80px]" aria-label="Body readiness reflection" />
           </div>
-          <div className="flex gap-2 items-center mt-2">
-            <InputPanel
-              label="SUPPORTIVE ENVIRONMENT"
-              value={customEnv}
-              onChange={(e) => setCustomEnv((e.target as HTMLInputElement).value)}
-              placeholder="Custom supportive environment..."
-              aria-label="Custom supportive environment"
-              className="flex-1"
-              disabled={!hasBodyRead}
-            />
-            <button
-              onClick={() => {
-                if (customEnv.trim()) {
-                  setEnv(cur => [...cur, customEnv.trim()]);
-                  setCustomEnv('');
-                }
-              }}
-            disabled={!customEnv.trim() || !hasBodyRead}
-              className="px-3 py-2 border border-slate-300 rounded disabled:opacity-50"
-              aria-label="Add custom supportive environment"
-            >
-              Add
+          <div className="flex gap-3">
+            <button className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800" onClick={save} disabled={loading} aria-label="Save safety note">
+              {loading ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
-
-        <div className="grid gap-2">
-          <InputPanel
-            label="NEEDS"
-            id="needs"
-            value={needsText}
-            onChange={(e) => setNeedsText((e.target as HTMLInputElement).value)}
-            placeholder="e.g., rest, warmth, quiet (comma to add multiple)"
-            aria-label="Needs input"
-            disabled={!hasBodyRead}
-          />
-          <p id="needs-hint" className="text-xs text-ink-600">Suggestions are optional. Choose only what feels kind.</p>
-          <ChipList chips={chips} onSelect={(c) => hasBodyRead && setNeedsText(c.text)} />
-        </div>
-
-        {(consent.toLowerCase().includes('not yet') || needsText) && (
-          <div className="grid gap-2">
-            <p className="text-sm text-ink-600">If a part says “not yet,” name it and its need:</p>
-            <InputPanel label="PART NAME" id="part-name" value={partName} onChange={(e) => setPartName((e.target as HTMLInputElement).value)} aria-label="Part name" disabled={!hasBodyRead} />
-            <InputPanel label="PART NEED" id="part-need" value={partNeed} onChange={(e) => setPartNeed((e.target as HTMLInputElement).value)} aria-label="Part need" disabled={!hasBodyRead} />
-          </div>
-        )}
-      </div>
-      {useAutosaveForm('safety', { bodyReflection, consent, env, needsText, partName, partNeed }), null}
-      {/* Save remains at the bottom; disabled until body read is entered */}
-      <div className="flex gap-3">
-        <StackedButton className="rect-btn--sm" onClick={save} disabled={loading || !hasBodyRead || !hasNeedWhenNotYet} aria-label="Save safety note">
-          {loading ? 'SAVING…' : 'SAVE'}
-        </StackedButton>
-        <button
-          className="px-3 py-2 border rounded"
-          onClick={() => {
-            // Jump to next required
-            const body = document.getElementById('body-reflection');
-            if (!hasBodyRead && body) body.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            else if (consent === 'not yet') {
-              const needs = document.getElementById('consent-reason');
-              if (needs) needs.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }}
-        >
-          Jump to Next Required
-        </button>
-      </div>
-      <MobileActions onSave={save} continueHref="/artifact/clarity" continueLabel="Continue to Clarity" disabled={loading || !hasBodyRead || !hasNeedWhenNotYet} />
-      {justSaved ? (
-        <SaveBanner
-          nextHref="/artifact/clarity"
-          nextLabel="Continue to Clarity"
-          onClose={() => setJustSaved(false)}
-        />
-      ) : (
-        status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>
       )}
+
+      {/* FAQ-style reassurance */}
+      <p className="text-sm text-ink-500 italic">You can't mess this up. If something feels off, you can always come back.</p>
+
+      {/* What's next guidance */}
+      <div className="mt-6 pt-4 border-t border-slate-200">
+        <p className="text-sm text-ink-600 mb-3">Ready to continue?</p>
+        <div className="flex flex-wrap gap-3">
+          <a href="/artifact/clarity" className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2">
+            Continue to Clarity <span aria-hidden>→</span>
+          </a>
+          <a href="/artifact/void" className="px-4 py-2 border rounded hover:bg-bone-50">
+            Drop into VOID first
+          </a>
+        </div>
+      </div>
+
+      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
     </section>
   );
 }

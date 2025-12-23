@@ -5,99 +5,51 @@ let transformers;
 // Seed corpus - inline to avoid import issues
 const seed = {
   "needs": ["rest", "warmth", "water", "quiet", "softness", "permission", "time", "support", "light", "breath"],
-  "traits": ["steady", "curious", "clear", "tender", "focused", "playful", "patient", "bold", "gentle", "grounded", "positive"],
+  // Expanded traits to cover creative, aesthetic, spiritual, and self-led dimensions
+  "traits": [
+    // Grounded/calm traits
+    "steady", "grounded", "patient", "calm", "centered", "rooted", "anchored",
+    // Curious/open traits  
+    "curious", "open", "playful", "spontaneous", "adventurous", "receptive",
+    // Clarity/focus traits
+    "clear", "focused", "precise", "discerning", "intentional", "sharp",
+    // Strength/presence traits
+    "bold", "confident", "brave", "decisive", "resilient", "sovereign",
+    // Gentle/relational traits
+    "gentle", "tender", "kind", "compassionate", "generous", "loving",
+    // Creative/aesthetic traits
+    "creative", "expressive", "artistic", "aesthetic", "visionary",
+    "refined", "sophisticated", "innovative", "imaginative", "inspired",
+    // Authentic/self traits
+    "authentic", "present", "aware", "embodied", "alive", "whole",
+    // Spiritually fluent / internally anchored traits (from user's audience)
+    "intuitive", "attuned", "trusting", "surrendered", "aligned", "magnetic",
+    "self-led", "internally anchored", "spiritually fluent", "self-trusting",
+    // Ambitious without frantic
+    "ambitious", "driven", "purposeful", "unhurried", "spacious", "flowing",
+    // Valuing both simplicity and complexity
+    "simple", "elegant", "nuanced", "layered", "deep", "rich",
+    // Internal state → external results
+    "radiant", "coherent", "integrated", "harmonized", "resonant",
+    // Vitality/sensuality/energy traits
+    "sexy", "juicy", "energized", "vibrant", "sensual", "lush", "electric",
+    "fiery", "warm", "glowing", "turned on", "lit up", "potent", "charged", "lusty"
+  ],
   "contexts": ["kitchen cleanup", "morning light", "desk reset", "walk outside", "tea ritual", "soft clothes", "open window"],
   "frictions": ["scrolling", "overcommit", "clutter", "late nights", "self-critique"]
 };
 
-// Trait synonyms for enhanced matching - inline to avoid import issues
-const traitSynonyms = {
-  "traits": {
-    "positive": {
-      "canonical": "positive",
-      "synonyms": ["optimistic", "upbeat", "hopeful", "cheerful", "sunny", "bright"],
-      "aliases": ["positivity", "positiveness"]
-    },
-    "optimistic": {
-      "canonical": "positive",
-      "synonyms": ["hopeful", "confident", "rosy", "sanguine"],
-      "aliases": ["optimism"]
-    },
-    "steady": {
-      "canonical": "steady",
-      "synonyms": ["stable", "consistent", "reliable", "constant"],
-      "aliases": ["steadiness"]
-    },
-    "curious": {
-      "canonical": "curious",
-      "synonyms": ["inquisitive", "interested", "eager", "nosy"],
-      "aliases": ["curiosity"]
-    },
-    "clear": {
-      "canonical": "clear",
-      "synonyms": ["lucid", "transparent", "obvious", "distinct"],
-      "aliases": ["clarity"]
-    },
-    "tender": {
-      "canonical": "tender",
-      "synonyms": ["gentle", "soft", "caring", "loving"],
-      "aliases": ["tenderness"]
-    },
-    "focused": {
-      "canonical": "focused",
-      "synonyms": ["concentrated", "attentive", "intent", "fixed"],
-      "aliases": ["focus"]
-    },
-    "playful": {
-      "canonical": "playful",
-      "synonyms": ["fun", "mischievous", "lighthearted", "joyful"],
-      "aliases": ["playfulness"]
-    },
-    "patient": {
-      "canonical": "patient",
-      "synonyms": ["tolerant", "understanding", "calm", "composed"],
-      "aliases": ["patience"]
-    },
-    "bold": {
-      "canonical": "bold",
-      "synonyms": ["brave", "daring", "courageous", "fearless"],
-      "aliases": ["boldness"]
-    },
-    "gentle": {
-      "canonical": "gentle",
-      "synonyms": ["soft", "mild", "kind", "tender"],
-      "aliases": ["gentleness"]
-    },
-    "grounded": {
-      "canonical": "grounded",
-      "synonyms": ["centered", "balanced", "stable", "practical"],
-      "aliases": ["grounding"]
-    }
-  }
-};
-
 // Will be configured after dynamic import
-
-type ContextBundle = {
-  inspiration?: string;
-  working?: string;
-  recurringThought?: string;
-  jealousy?: string;
-  recentMoment?: string;
-  feltNatural?: string;
-};
 
 type Message =
   | { type: 'ready' }
   | { type: 'suggest'; domain: 'needs' | 'traits' | 'contexts' | 'frictions'; text?: string }
-  | { type: 'suggest-multi'; domain: 'needs' | 'traits' | 'contexts' | 'frictions'; context: ContextBundle; options?: { weights?: Record<string, number> } }
   | { type: 'ingest'; domain: 'needs' | 'traits' | 'contexts' | 'frictions'; text: string; source: 'user' }
   | { type: 'reframe'; text: string }
   | { type: 'load-user-embeddings'; embeddings: Array<{ id: string; domain: string; text: string; vector: number[]; source: string; created_at: number }> };
 
-type WorkerResponse = 
-  | { type: 'suggest'; items: { id: string; text: string; source: 'seed' | 'user'; method?: 'embedding' | 'fuzzy' }[] } 
-  | { type: 'suggest-multi'; items: { id: string; text: string; source: 'seed' | 'user'; method?: 'embedding' | 'fuzzy' }[] }
+type WorkerResponse =
+  | { type: 'suggest'; items: { id: string; text: string; source: 'seed' | 'user'; method?: 'embedding' | 'fuzzy' }[] }
   | { type: 'ready'; pipelineAvailable: boolean }
   | { type: 'ingest'; id: string; vector: number[] }
   | { type: 'reframe'; text: string };
@@ -118,104 +70,18 @@ let userEmbeddings: EmbeddingItem[] = [];
 // Cosine similarity function
 function cosineSimilarity(vecA: number[], vecB: number[]): number {
   if (vecA.length !== vecB.length) return 0;
-  
+
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  
+
   for (let i = 0; i < vecA.length; i++) {
     dotProduct += vecA[i] * vecB[i];
     normA += vecA[i] * vecA[i];
     normB += vecB[i] * vecB[i];
   }
-  
+
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-// Check if trait matches any synonyms in context
-function checkSynonymMatch(traitText: string, contextBundle: ContextBundle): boolean {
-  const traitLower = traitText.toLowerCase();
-  const traitSynonymsData = (traitSynonyms as any).traits[traitLower];
-  
-  if (!traitSynonymsData) return false;
-
-  const allSynonyms = [
-    traitSynonymsData.canonical,
-    ...traitSynonymsData.synonyms,
-    ...traitSynonymsData.aliases
-  ];
-
-  const contextText = Object.values(contextBundle)
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
-  return allSynonyms.some(synonym =>
-    contextText.includes(synonym.toLowerCase())
-  );
-}
-
-// Aggregate context with weights
-function aggregateContext(context: ContextBundle, weights: Record<string, number>): string {
-  const contextParts: string[] = [];
-  
-  Object.entries(context).forEach(([key, value]) => {
-    if (value?.trim()) {
-      const weight = weights[key] || 0.1;
-      const repeats = Math.ceil(weight * 10);
-      for (let i = 0; i < repeats; i++) {
-        contextParts.push(value.trim());
-      }
-    }
-  });
-  
-  return contextParts.join(' ');
-}
-
-// Multi-context scoring algorithm
-async function scoreMultiContextEmbeddings(
-  contextBundle: ContextBundle,
-  embeddings: EmbeddingItem[],
-  weights: Record<string, number>
-): Promise<Array<{ embedding: EmbeddingItem; score: number }>> {
-  if (!pipeline_) return [];
-
-  // Generate embeddings for each non-empty context
-  const contextEmbeddings: { [key: string]: number[] } = {};
-  
-  for (const [key, text] of Object.entries(contextBundle)) {
-    if (text?.trim()) {
-      try {
-        const output = await pipeline_(text, { pooling: 'mean', normalize: true });
-        contextEmbeddings[key] = Array.from(output.data) as number[];
-      } catch (error) {
-        console.warn(`Failed to embed context ${key}:`, error);
-      }
-    }
-  }
-
-  // Score each trait embedding against all context embeddings
-  return embeddings.map(embedding => {
-    let totalScore = 0;
-    let contextCount = 0;
-
-    for (const [contextKey, contextVector] of Object.entries(contextEmbeddings)) {
-      const similarity = cosineSimilarity(embedding.vector, contextVector);
-      const weight = weights[contextKey] || 0.1;
-      totalScore += similarity * weight;
-      contextCount++;
-    }
-
-    // Apply normalization and bonuses
-    const normalizedScore = contextCount > 0 ? totalScore / contextCount : 0;
-    const userBonus = embedding.source === 'user' ? 0.15 : 0;
-    const synonymBonus = checkSynonymMatch(embedding.text, contextBundle) ? 0.1 : 0;
-
-    return {
-      embedding,
-      score: normalizedScore + userBonus + synonymBonus
-    };
-  });
 }
 
 // Initialize pipeline and embed seed corpus
@@ -224,14 +90,14 @@ async function initializePipeline() {
     console.log('Loading transformers.js...');
     // Dynamic import to avoid MIME type issues
     transformers = await import('@xenova/transformers');
-    
+
     // Configure transformers.js for local models
     if (transformers.env) {
       transformers.env.allowLocalModels = true;
       transformers.env.localModelPath = '/models/';
       transformers.env.useBrowserCache = false;
     }
-    
+
     console.log('Initializing transformers.js pipeline...');
     pipeline_ = await transformers.pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
       quantized: true
@@ -294,44 +160,44 @@ function reframeToNeutral(text: string): string {
   // Simple neutralization: remove emotional adjectives and judgments
   const emotionalWords = /\b(terrible|awful|amazing|great|horrible|wonderful|stupid|brilliant|bad|good|worst|best|hate|love|disgusting|beautiful)\b/gi;
   const judgmentWords = /\b(should|shouldn't|must|can't|never|always|impossible|perfect|failure|success)\b/gi;
-  
+
   let neutral = text
     .replace(emotionalWords, '')
     .replace(judgmentWords, '')
     .replace(/\s+/g, ' ')
     .trim();
-    
+
   // Ensure it starts with a neutral observation
   if (neutral.length > 0) {
     neutral = 'I notice ' + neutral.toLowerCase();
   }
-  
+
   return neutral || 'I notice something is present.';
 }
 
 self.onmessage = async (e: MessageEvent<Message>) => {
   const msg = e.data;
-  
+
   try {
     switch (msg.type) {
       case 'suggest': {
         if (pipeline_ && (seedEmbeddings.length > 0 || userEmbeddings.length > 0)) {
           // Use embeddings for suggestions
           let queryVector: number[] | null = null;
-          
+
           if (msg.text) {
             const output = await pipeline_(msg.text, { pooling: 'mean', normalize: true });
             queryVector = Array.from(output.data) as number[];
           }
-          
+
           // Combine seed and user embeddings for the domain
           const domainEmbeddings = [
             ...seedEmbeddings.filter(e => e.domain === msg.domain),
             ...userEmbeddings.filter(e => e.domain === msg.domain)
           ];
-          
+
           let suggestions: Array<{ id: string; text: string; source: 'seed' | 'user'; score: number }>;
-          
+
           if (queryVector) {
             // Rank by cosine similarity
             suggestions = domainEmbeddings
@@ -353,15 +219,15 @@ self.onmessage = async (e: MessageEvent<Message>) => {
               .slice(0, 8)
               .map(e => ({ ...e, score: 1 }));
           }
-          
+
           const items = suggestions.map(s => ({ id: s.id, text: s.text, source: s.source, method: 'embedding' as const }));
           self.postMessage({ type: 'suggest', items } satisfies WorkerResponse);
         } else {
           // Fallback to fuzzy matching
           const pool = (seed as any)[msg.domain] as string[];
-          const items = fuzzyFilter(pool, msg.text).map((t) => ({ 
-            id: `${msg.domain}:${t}`, 
-            text: t, 
+          const items = fuzzyFilter(pool, msg.text).map((t) => ({
+            id: `${msg.domain}:${t}`,
+            text: t,
             source: 'seed' as const,
             method: 'fuzzy' as const
           }));
@@ -369,83 +235,13 @@ self.onmessage = async (e: MessageEvent<Message>) => {
         }
         break;
       }
-      
-      case 'suggest-multi': {
-        if (pipeline_ && (seedEmbeddings.length > 0 || userEmbeddings.length > 0)) {
-          // Use multi-context embeddings for suggestions
-          const defaultWeights = {
-            inspiration: 0.4,
-            working: 0.2,
-            recurringThought: 0.2,
-            jealousy: 0.2,
-            recentMoment: 0.05,
-            feltNatural: 0.05
-          };
-          
-          const weights = msg.options?.weights || defaultWeights;
-          
-          // Combine seed and user embeddings for the domain
-          const domainEmbeddings = [
-            ...seedEmbeddings.filter(e => e.domain === msg.domain),
-            ...userEmbeddings.filter(e => e.domain === msg.domain)
-          ];
-          
-          if (domainEmbeddings.length > 0) {
-            // Use multi-context scoring algorithm
-            const scoredEmbeddings = await scoreMultiContextEmbeddings(
-              msg.context,
-              domainEmbeddings,
-              weights
-            );
-            
-            const suggestions = scoredEmbeddings
-              .sort((a, b) => b.score - a.score)
-              .slice(0, 8);
-            
-            const items = suggestions.map(s => ({ 
-              id: s.embedding.id, 
-              text: s.embedding.text, 
-              source: s.embedding.source, 
-              method: 'embedding' as const 
-            }));
-            
-            self.postMessage({ type: 'suggest-multi', items } satisfies WorkerResponse);
-          } else {
-            // No embeddings available, return empty
-            self.postMessage({ type: 'suggest-multi', items: [] } satisfies WorkerResponse);
-          }
-        } else {
-          // Fallback to fuzzy matching with aggregated context
-          const defaultWeights = {
-            inspiration: 0.4,
-            working: 0.2,
-            recurringThought: 0.2,
-            jealousy: 0.2,
-            recentMoment: 0.05,
-            feltNatural: 0.05
-          };
-          
-          const weights = msg.options?.weights || defaultWeights;
-          const aggregatedText = aggregateContext(msg.context, weights);
-          
-          const pool = (seed as any)[msg.domain] as string[];
-          const items = fuzzyFilter(pool, aggregatedText).map((t) => ({ 
-            id: `${msg.domain}:${t}`, 
-            text: t, 
-            source: 'seed' as const,
-            method: 'fuzzy' as const
-          }));
-          self.postMessage({ type: 'suggest-multi', items } satisfies WorkerResponse);
-        }
-        break;
-      }
-      
+
       case 'ingest': {
         if (pipeline_) {
           const output = await pipeline_(msg.text, { pooling: 'mean', normalize: true });
           const vector = Array.from(output.data) as number[];
           const id = `user:${msg.domain}:${Date.now()}`;
-          
+
           // Store in user embeddings
           userEmbeddings.push({
             id,
@@ -455,18 +251,18 @@ self.onmessage = async (e: MessageEvent<Message>) => {
             source: 'user',
             created_at: Date.now()
           });
-          
+
           self.postMessage({ type: 'ingest', id, vector } satisfies WorkerResponse);
         }
         break;
       }
-      
+
       case 'reframe': {
         const neutralText = reframeToNeutral(msg.text);
         self.postMessage({ type: 'reframe', text: neutralText } satisfies WorkerResponse);
         break;
       }
-      
+
       case 'load-user-embeddings': {
         userEmbeddings = msg.embeddings.map(e => ({
           id: e.id,
@@ -485,9 +281,9 @@ self.onmessage = async (e: MessageEvent<Message>) => {
     // For suggestions, fall back to fuzzy matching
     if (msg.type === 'suggest') {
       const pool = (seed as any)[msg.domain] as string[];
-      const items = fuzzyFilter(pool, msg.text).map((t) => ({ 
-        id: `${msg.domain}:${t}`, 
-        text: t, 
+      const items = fuzzyFilter(pool, msg.text).map((t) => ({
+        id: `${msg.domain}:${t}`,
+        text: t,
         source: 'seed' as const,
         method: 'fuzzy' as const
       }));

@@ -1,32 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
-import TimerButton from '../components/TimerButton';
-import DefinitionPopover from '../components/DefinitionPopover';
-import StepTracker from '../components/StepTracker';
-import SaveBanner from '../components/SaveBanner';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ChipList } from '../components/Chips';
 import { addEntry, addTrait, listEntries, listTraits } from '../storage/storage';
-import { getSuggestions, getSuggestionsWithContext, ingestUserText, type SuggestResult } from '../ml';
-import { trackClarityMultiInputUsed, trackClarityTraitSelected } from '../lib/analytics';
-import { getContextFields, calculateContextLength, checkSynonymMatch } from '../ml/context_aggregator';
-import StackedButton from '../components/ui/StackedButton';
-import InputPanel from '../components/ui/InputPanel';
-import MobileActions from '../components/MobileActions';
-import { loadAutosave, useAutosaveForm } from '../hooks/useAutosaveForm';
+import { getSuggestions, ingestUserText, type SuggestResult } from '../ml';
 
 export default function Clarity() {
   const [searchParams] = useSearchParams();
   const gentleMode = searchParams.get('mode') === 'gentle';
-  
-  // Feature flag for multi-context functionality
-  const ENABLE_MULTI_CONTEXT = typeof window !== 'undefined' && 
-    localStorage.getItem('clarity_multi_context') !== 'false';
 
   const [input, setInput] = useState('');
   const [selectedTrait, setSelectedTrait] = useState<string | null>(null);
-  const [chips, setChips] = useState<{ id: string; text: string; source: 'seed' | 'user' }[]>([]);
+  const [chips, setChips] = useState<{ id: string; text: string; source: 'seed' | 'user'; method?: 'embedding' | 'fuzzy' }[]>([]);
   const [isThrottled, setIsThrottled] = useState(false);
   const [rehearsing, setRehearsing] = useState(false);
   const [overlap, setOverlap] = useState('');
@@ -34,162 +20,53 @@ export default function Clarity() {
   const [userTraitChips, setUserTraitChips] = useState<{ id: string; text: string; source: 'user' }[]>([]);
   const [relatedTraitChips, setRelatedTraitChips] = useState<{ id: string; text: string; source: 'user' }[]>([]);
   const [status, setStatus] = useState('');
-  const [justSaved, setJustSaved] = useState(false);
   const prefersReduced = useReducedMotion();
 
-  // Additional state variables for disconnected input fields
-  const [workingInput, setWorkingInput] = useState('');
-  const [recurringThoughtInput, setRecurringThoughtInput] = useState('');
-  const [jealousyInput, setJealousyInput] = useState('');
-  const [recentMoment, setRecentMoment] = useState('');
-  const [feltNatural, setFeltNatural] = useState('');
-
   useEffect(() => {
-    // Debounce ML suggestions and merge with starter traits - use multi-context
+    // Debounce ML suggestions and merge with starter traits
     const timer = setTimeout(() => {
-      const contextBundle = {
-        inspiration: input,
-        working: workingInput,
-        recurringThought: recurringThoughtInput,
-        jealousy: jealousyInput,
-        recentMoment,
-        feltNatural
-      };
-
-      // Check if any context is provided
-      const hasContext = Object.values(contextBundle).some(value => value?.trim());
-
-      if (hasContext && ENABLE_MULTI_CONTEXT) {
-        // Use multi-context suggestions when we have input and feature is enabled
-        const startTime = performance.now();
-        
-        getSuggestionsWithContext('traits', contextBundle, {
-          weights: {
-            inspiration: 0.4,
-            working: 0.2,
-            recurringThought: 0.2,
-            jealousy: 0.2,
-            recentMoment: 0.05,
-            feltNatural: 0.05
-          }
-        }).then((result: SuggestResult) => {
-          const endTime = performance.now();
-          const processingTime = endTime - startTime;
-          
-          setIsThrottled(result.throttled || false);
-          const mlChips = result.items;
-          
-          // Track multi-input usage
-          if (!result.throttled) {
-            trackClarityMultiInputUsed({
-              field_count: getContextFields(contextBundle).length,
-              context_length: calculateContextLength(contextBundle),
-              chip_count: mlChips.length,
-              top_chip_source: mlChips.length > 0 ? mlChips[0].source : 'seed',
-              processing_time: processingTime
-            });
-          }
-          
-          const starterTraits = gentleMode 
-            ? [
-                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
-                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
-                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
-                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
-                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
-              ]
-            : [
-                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
-                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
-                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
-                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
-                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
-              ];
-          const finalChips = mlChips.length > 0 ? mlChips : starterTraits;
-          setChips(finalChips);
-        }).catch(() => {
-          setIsThrottled(false);
-          const starterTraits = gentleMode 
-            ? [
-                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
-                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
-                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
-                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
-                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
-              ]
-            : [
-                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
-                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
-                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
-                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
-                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
-              ];
-          setChips(starterTraits);
-        });
-      } else if (hasContext && !ENABLE_MULTI_CONTEXT && input.trim()) {
-        // Fallback to single-input suggestions when feature flag is disabled but we have inspiration input
-        getSuggestions('traits', input).then((result: SuggestResult) => {
-          setIsThrottled(result.throttled || false);
-          const mlChips = result.items;
-          const starterTraits = gentleMode 
-            ? [
-                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
-                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
-                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
-                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
-                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
-              ]
-            : [
-                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
-                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
-                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
-                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
-                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
-              ];
-          const finalChips = mlChips.length > 0 ? mlChips : starterTraits;
-          setChips(finalChips);
-        }).catch(() => {
-          setIsThrottled(false);
-          const starterTraits = gentleMode 
-            ? [
-                { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
-                { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
-                { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
-                { id: 'gentle-present', text: 'More present', source: 'seed' as const },
-                { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
-              ]
-            : [
-                { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
-                { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
-                { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
-                { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
-                { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
-              ];
-          setChips(starterTraits);
-        });
-      } else {
-        // Show starter traits when no input is provided
-        const starterTraits = gentleMode 
+      getSuggestions('traits', input).then((result: SuggestResult) => {
+        setIsThrottled(result.throttled || false);
+        const mlChips = result.items;
+        const starterTraits = gentleMode
           ? [
-              { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
-              { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
-              { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
-              { id: 'gentle-present', text: 'More present', source: 'seed' as const },
-              { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
-            ]
+            { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
+            { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
+            { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
+            { id: 'gentle-present', text: 'More present', source: 'seed' as const },
+            { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
+          ]
           : [
-              { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
-              { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
-              { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
-              { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
-              { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
-            ];
-        setChips(starterTraits);
+            { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
+            { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
+            { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
+            { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
+            { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
+          ];
+        const finalChips = mlChips.length > 0 ? mlChips : starterTraits;
+        setChips(finalChips);
+      }).catch(() => {
         setIsThrottled(false);
-      }
+        const starterTraits = gentleMode
+          ? [
+            { id: 'gentle-calm', text: 'A bit calmer', source: 'seed' as const },
+            { id: 'gentle-kind', text: 'More kind', source: 'seed' as const },
+            { id: 'gentle-patient', text: 'Slightly patient', source: 'seed' as const },
+            { id: 'gentle-present', text: 'More present', source: 'seed' as const },
+            { id: 'gentle-gentle', text: 'Gentler', source: 'seed' as const }
+          ]
+          : [
+            { id: 'starter-calm', text: 'Calm', source: 'seed' as const },
+            { id: 'starter-generous', text: 'Generous', source: 'seed' as const },
+            { id: 'starter-brave', text: 'Brave', source: 'seed' as const },
+            { id: 'starter-creative', text: 'Creative', source: 'seed' as const },
+            { id: 'starter-precise', text: 'Precise', source: 'seed' as const }
+          ];
+        setChips(starterTraits);
+      });
     }, 400);
     return () => clearTimeout(timer);
-  }, [input, workingInput, recurringThoughtInput, jealousyInput, recentMoment, feltNatural, gentleMode]);
+  }, [input, gentleMode]);
 
   useEffect(() => {
     // surface past overlaps as chips (user source)
@@ -203,43 +80,6 @@ export default function Clarity() {
       ).slice(0, 12);
       setOverlapChips(texts.map((t) => ({ id: `overlap:${t}`, text: String(t), source: 'user' as const })));
     });
-  }, []);
-
-  // Autosave draft locally for resilience
-  useAutosaveForm('clarity', { input, selectedTrait, overlap, working: workingInput, recurringThought: recurringThoughtInput, jealousy: jealousyInput, recentMoment, feltNatural });
-
-  // Prefill last saved Clarity entry so content persists on return
-  useEffect(() => {
-    (async () => {
-      try {
-        const arr = await listEntries('clarity');
-        if (!arr || arr.length === 0) return;
-        const last = arr.reduce((a: any, b: any) => (a.timestamp > b.timestamp ? a : b));
-        const c = last.content || {};
-        if (typeof c.input === 'string') setInput(c.input);
-        if (typeof c.selectedTrait === 'string' || c.selectedTrait === null) setSelectedTrait(c.selectedTrait ?? null);
-        if (typeof c.overlap === 'string') setOverlap(c.overlap);
-        if (typeof c.working === 'string') setWorkingInput(c.working);
-        if (typeof c.recurringThought === 'string') setRecurringThoughtInput(c.recurringThought);
-        if (typeof c.jealousy === 'string') setJealousyInput(c.jealousy);
-        if (typeof c.recentMoment === 'string') setRecentMoment(c.recentMoment);
-        if (typeof c.feltNatural === 'string') setFeltNatural(c.feltNatural);
-      } catch {}
-      // Fallback: restore unsaved draft from localStorage autosave
-      try {
-        const draft = loadAutosave<any>('clarity');
-        if (draft) {
-          if (typeof draft.input === 'string') setInput(draft.input);
-          if (typeof draft.selectedTrait === 'string' || draft.selectedTrait === null) setSelectedTrait(draft.selectedTrait ?? null);
-          if (typeof draft.overlap === 'string') setOverlap(draft.overlap);
-          if (typeof draft.working === 'string') setWorkingInput(draft.working);
-          if (typeof draft.recurringThought === 'string') setRecurringThoughtInput(draft.recurringThought);
-          if (typeof draft.jealousy === 'string') setJealousyInput(draft.jealousy);
-          if (typeof draft.recentMoment === 'string') setRecentMoment(draft.recentMoment);
-          if (typeof draft.feltNatural === 'string') setFeltNatural(draft.feltNatural);
-        }
-      } catch {}
-    })();
   }, []);
 
   // Related traits via simple co-occurrence with overlaps
@@ -272,42 +112,9 @@ export default function Clarity() {
     });
   }, []);
 
-  // Custom trait selection handler with telemetry
-  function handleTraitSelection(chip: { id: string; text: string; source?: 'seed' | 'user' }, isToggle: boolean = false) {
-    const newSelection = isToggle && selectedTrait === chip.text ? null : chip.text;
-    setSelectedTrait(newSelection);
-
-    // Track trait selection if a trait was actually selected (not deselected)
-    if (newSelection) {
-      const contextBundle = {
-        inspiration: input,
-        working: workingInput,
-        recurringThought: recurringThoughtInput,
-        jealousy: jealousyInput,
-        recentMoment,
-        feltNatural
-      };
-
-      trackClarityTraitSelected({
-        trait_text: newSelection,
-        input_contexts: getContextFields(contextBundle),
-        synonym_matched: checkSynonymMatch(newSelection, contextBundle)
-      });
-    }
-  }
-
   async function save() {
     if (selectedTrait) await addTrait(selectedTrait);
-    await addEntry('clarity', {
-      input,
-      selectedTrait,
-      overlap,
-      working: workingInput,
-      recurringThought: recurringThoughtInput,
-      jealousy: jealousyInput,
-      recentMoment,
-      feltNatural
-    });
+    await addEntry('clarity', { input, selectedTrait, overlap });
 
     // Ingest selected trait for future ML suggestions
     if (selectedTrait) {
@@ -319,44 +126,34 @@ export default function Clarity() {
     }
 
     setStatus('Saved.');
-    setJustSaved(true);
-    // Prefetch next scene
-    try { (await import('../utils/prefetch')).prefetchScene('calibration'); } catch {}
     setTimeout(() => setStatus(''), 1500);
   }
 
   return (
     <section className="grid gap-6">
-      <StepTracker current="clarity" />
       <header className="grid gap-2">
-  <h1 className="text-2xl font-bold doto-base doto-700">Clarity{gentleMode ? ' (Gentle Mode)' : ''}</h1>
+        <h1 className="text-2xl font-bold font-humanist">Clarity{gentleMode ? ' (Gentle Mode)' : ''}</h1>
         <p className="text-ink-700 text-sm">Clarity means uncovering the identity shift that calls you. This can surface from desire, tension, or even envy.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
           Clarity points your compass. Without it, your mind runs on yesterday's autopilot. You are listening for what wants to emerge from you, reveal itself to you from your reality's mirror. Sometimes it comes through admiration. Sometimes through tension, even jealousy. Both are signals.
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>
       </header>
-      <nav className="text-sm flex gap-3 flex-wrap" aria-label="Quick jump">
-        <a href="#entry" className="underline">Entry Points</a>
-        <a href="#traits" className="underline">Choose Trait</a>
-        <a href="#overlap" className="underline">Find Overlap</a>
-      </nav>
-
-      <div id="entry" className="grid gap-4">
+      <div className="grid gap-4">
         <h2 className="font-semibold text-lg">Entry Points</h2>
-        
+
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
+          <summary className="p-3 cursor-pointer hover:bg-bone-50">
             <span className="font-medium">What inspires you?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
             <p className="mb-2">Think about people you admire, stories that move you, art that stops you in your tracks. What do they have that calls to you?</p>
-            <InputPanel
-              as="textarea"
-              label="WHAT INSPIRES YOU?"
+            <textarea
               id="insp"
               value={input}
-              onChange={(e) => setInput((e.target as HTMLTextAreaElement).value)}
+              onChange={(e) => setInput(e.target.value)}
+              className="border border-slate-300 rounded p-2 w-full"
+              rows={3}
               placeholder="Write about what inspires you..."
               aria-label="Inspiration input"
             />
@@ -364,17 +161,16 @@ export default function Clarity() {
         </details>
 
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
+          <summary className="p-3 cursor-pointer hover:bg-bone-50">
             <span className="font-medium">What's working?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
             <p className="mb-2">Name one small thing that already feels aligned with who you're becoming.</p>
-            <InputPanel
-              as="textarea"
-              label="WHAT'S WORKING?"
+            <label htmlFor="working" className="sr-only">What's working</label>
+            <textarea
               id="working"
-              value={workingInput}
-              onChange={(e) => setWorkingInput((e.target as HTMLTextAreaElement).value)}
+              className="border border-slate-300 rounded p-2 w-full"
+              rows={3}
               placeholder="e.g., I noticed I spoke more slowly and felt grounded on my call today."
               aria-label="What's working"
             />
@@ -382,16 +178,14 @@ export default function Clarity() {
         </details>
 
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
+          <summary className="p-3 cursor-pointer hover:bg-bone-50">
             <span className="font-medium">What recurring thought keeps showing up?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
             <p className="mb-2">What is the intention of this thought? At the end of the day, what is this thought trying to get you to feel more of in your reality?</p>
-            <InputPanel
-              as="textarea"
-              label="RECURRING THOUGHT"
-              value={recurringThoughtInput}
-              onChange={(e) => setRecurringThoughtInput((e.target as HTMLTextAreaElement).value)}
+            <textarea
+              className="border border-slate-300 rounded p-2 w-full"
+              rows={3}
               placeholder="Describe the recurring thought and what it's trying to show you..."
               aria-label="Recurring thought input"
             />
@@ -399,39 +193,49 @@ export default function Clarity() {
         </details>
 
         <details className="border rounded-lg">
-          <summary className="p-3 cursor-pointer hover:bg-bone-50" onClick={(e) => { if (!prefersReduced) { setTimeout(() => (e.currentTarget as HTMLElement).scrollIntoView({ block: 'start', behavior: 'smooth' }), 50); } }}>
+          <summary className="p-3 cursor-pointer hover:bg-bone-50">
             <span className="font-medium">Who triggers a spark of jealousy?</span>
           </summary>
           <div className="p-3 pt-0 text-sm text-ink-700">
             <p className="mb-2">Jealousy is directional. What does that person have that reveals what you want?</p>
-            <InputPanel
-              as="textarea"
-              label="JEALOUSY SIGNAL"
-              value={jealousyInput}
-              onChange={(e) => setJealousyInput((e.target as HTMLTextAreaElement).value)}
+            <textarea
+              className="border border-slate-300 rounded p-2 w-full"
+              rows={3}
               placeholder="Write about the jealousy and what it reveals..."
               aria-label="Jealousy insight input"
             />
           </div>
         </details>
       </div>
-      <div id="traits">
-        <div className="flex items-center gap-2 mb-2">
+
+      {/* Scroll indicator - signals more content below */}
+      <div className="flex justify-center py-2 text-ink-400">
+        <span className="text-sm animate-pulse">↓ Choose a trait below</span>
+      </div>
+
+      <div>
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
           <p className="text-sm text-ink-600">Tap a trait chip to choose one.</p>
+          {/* Only show "Based on what you wrote" if ML actually used embeddings to match */}
+          {!isThrottled && input.trim() && chips.length > 0 && chips.some(c => c.method === 'embedding') && (
+            <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
+              Based on what you wrote
+            </span>
+          )}
           {isThrottled && (
             <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-full">
-              Throttled - showing recent suggestions
+              Showing recent suggestions
             </span>
           )}
         </div>
         <ChipList
           chips={chips}
-          onSelect={(c) => handleTraitSelection(c, true)}
+          onSelect={(c) => setSelectedTrait((prev) => (prev === c.text ? null : c.text))}
         />
         {userTraitChips.length > 0 && (
           <div className="mt-2">
-            <p className="text-sm text-ink-600">From you</p>
-            <ChipList chips={userTraitChips} onSelect={(c) => handleTraitSelection(c)} />
+            <p className="text-sm text-ink-500">Traits you've saved before:</p>
+            <ChipList chips={userTraitChips} onSelect={(c) => setSelectedTrait(c.text)} />
           </div>
         )}
         {selectedTrait && (
@@ -443,15 +247,33 @@ export default function Clarity() {
           </div>
         )}
       </div>
-      <div className="grid gap-2">
-        {selectedTrait && (
-          <div className="p-3 bg-bone-50 rounded text-sm text-ink-700">
-            Now, notice where this trait is already alive in you. This overlap turns clarity into proof.
-          </div>
-        )}
-        <TimerButton duration={45} label="Start 45-second rehearsal" onStart={() => setRehearsing(true)} onDone={() => setRehearsing(false)} />
+      <div className="grid gap-3">
+        {/* Orienting text - always visible */}
+        <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
+          <p className="font-medium mb-1">45-Second Embodiment Practice</p>
+          <p>Once you've chosen a trait, take 45 seconds to sit with it. Let it settle in your body. Notice where you feel it.</p>
+        </div>
+
+        {/* Practice button - disabled until trait selected */}
+        <button
+          className={`px-4 py-2 rounded inline-flex items-center gap-2 transition-colors ${selectedTrait
+            ? 'bg-ink-900 text-bone-50 hover:bg-ink-800'
+            : 'bg-ink-200 text-ink-400 cursor-not-allowed'
+            }`}
+          onClick={() => selectedTrait && setRehearsing(true)}
+          disabled={!selectedTrait}
+          aria-label={selectedTrait ? 'Begin 45-second embodiment practice' : 'Select a trait first to begin practice'}
+        >
+          <span aria-hidden>▶</span>
+          {selectedTrait
+            ? `Sit with "${selectedTrait}" for 45 seconds`
+            : 'Select a trait above to begin'}
+        </button>
+
+        {/* Active practice state */}
         {rehearsing && (
-          <div className="grid gap-3 place-items-center" aria-live="polite">
+          <div className="grid gap-3 place-items-center p-6 bg-bone-50 rounded-lg">
+            <Timer seconds={45} label="Embodiment practice" onDone={() => setRehearsing(false)} />
             {prefersReduced ? (
               <div className="w-24 h-24 rounded-full border-2 border-ink-600" aria-hidden />
             ) : (
@@ -462,83 +284,87 @@ export default function Clarity() {
                 aria-hidden
               />
             )}
-            <p className="text-sm text-ink-600">Let the trait land in your body.</p>
+            <p className="text-sm text-ink-600 text-center">
+              Let "{selectedTrait}" land in your body.<br />
+              Where do you feel it?
+            </p>
           </div>
         )}
       </div>
 
-      <div id="overlap" className="grid gap-4">
-        <h3 className="font-semibold">Find Your Overlap <DefinitionPopover term="Overlap">A moment you already lived the new trait. Proof that it’s already alive in you.</DefinitionPopover></h3>
-        
+      <div className="grid gap-4">
+        <h3 className="font-semibold">Where Are You Already This Way?</h3>
+
         <div className="grid gap-3">
           <div>
             <label className="text-sm font-medium">Step 1: Recall a recent moment</label>
             <p className="text-xs text-ink-600 mb-2">Where did you already act this way today or recently?</p>
-            <InputPanel
-              as="textarea"
-              label="RECENT MOMENT"
-              value={recentMoment}
-              onChange={(e) => setRecentMoment((e.target as HTMLTextAreaElement).value)}
+            <textarea
+              className="border border-slate-300 rounded p-2 w-full text-sm"
+              rows={2}
               placeholder="e.g., I stayed calm during that difficult phone call..."
             />
           </div>
-          
+
           <div>
             <label className="text-sm font-medium">Step 2: What felt natural?</label>
             <p className="text-xs text-ink-600 mb-2">What about that moment felt effortless or authentic?</p>
-            <InputPanel
-              as="textarea"
-              label="WHAT FELT NATURAL?"
-              value={feltNatural}
-              onChange={(e) => setFeltNatural((e.target as HTMLTextAreaElement).value)}
+            <textarea
+              className="border border-slate-300 rounded p-2 w-full text-sm"
+              rows={2}
               placeholder="e.g., My breathing stayed steady, I listened without rushing to respond..."
             />
           </div>
-          
+
           <div>
-            <label htmlFor="overlap" className="text-sm font-medium">Step 3: Name one overlap</label>
-            <p className="text-xs text-ink-600 mb-2">Where does your new identity already meet your current self?</p>
-            <InputPanel
+            <label htmlFor="overlap" className="text-sm font-medium">Step 3: Name one connection</label>
+            <p className="text-xs text-ink-600 mb-2">This is where your current self already meets who you're becoming.</p>
+            <input
               id="overlap"
-              label="OVERLAP"
               value={overlap}
-              onChange={(e) => setOverlap((e.target as HTMLInputElement).value)}
+              onChange={(e) => setOverlap(e.target.value)}
+              className="border border-slate-300 rounded p-2 w-full"
               placeholder="e.g., I already have the calm presence I'm cultivating"
-              aria-label="Overlap input"
+              aria-label="Connection point input"
             />
             <div className="mt-2">
-              <StackedButton className="rect-btn--sm" onClick={save} aria-label="Save Overlap">SAVE OVERLAP</StackedButton>
+              <button className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800" onClick={save} aria-label="Save connection">Save This</button>
             </div>
           </div>
         </div>
-        
+
         {overlapChips.length > 0 && (
           <div>
-            <p className="text-sm text-ink-600 mt-1">Past overlaps</p>
+            <p className="text-sm text-ink-600 mt-1">Evidence of Who You Already Are</p>
             <ChipList chips={overlapChips} onSelect={(c) => setOverlap(c.text)} />
           </div>
         )}
         {relatedTraitChips.length > 0 && (
           <div className="mt-2">
-            <p className="text-sm text-ink-600">Related traits (from overlaps)</p>
-            <ChipList chips={relatedTraitChips} onSelect={(c) => handleTraitSelection(c)} />
+            <p className="text-sm text-ink-600">Related traits</p>
+            <ChipList chips={relatedTraitChips} onSelect={(c) => setSelectedTrait(c.text)} />
           </div>
         )}
       </div>
 
-      <div className="flex gap-3">
-        <StackedButton className="rect-btn--sm" onClick={save} aria-label="Save clarity note">SAVE</StackedButton>
+      {/* FAQ-style reassurance */}
+      <p className="text-sm text-ink-500 italic">There's no wrong way to do this. Follow what feels true.</p>
+
+      {/* What's next guidance */}
+      <div className="mt-6 pt-4 border-t border-slate-200">
+        <p className="text-sm text-ink-600 mb-3">Ready to continue?</p>
+        <div className="flex flex-wrap gap-3">
+          <a href="/artifact/calibration" className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2">
+            Continue to Grounding <span aria-hidden>→</span>
+          </a>
+          <a href="/artifact/void" className="px-4 py-2 border rounded hover:bg-bone-50">
+            Take a pause in VOID
+          </a>
+        </div>
       </div>
-      <MobileActions onSave={save} continueHref="/artifact/calibration" continueLabel="Continue to Calibration" />
-      {justSaved ? (
-        <SaveBanner
-          nextHref="/artifact/calibration"
-          nextLabel="Continue to Calibration"
-          onClose={() => setJustSaved(false)}
-        />
-      ) : (
-        status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>
-      )}
+
+      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
     </section>
   );
 }
+

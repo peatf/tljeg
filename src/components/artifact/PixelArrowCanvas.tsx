@@ -11,10 +11,51 @@ interface PixelArrowCanvasProps {
   }>;
 }
 
-// 8-way direction labels
-type Direction = 'right' | 'downRight' | 'down' | 'downLeft' | 'left' | 'upLeft' | 'up' | 'upRight';
+// Pre-built pixel arrowhead masks for 8 directions (small, clean arrow tips)
+const ARROWHEAD_MASKS = {
+  // Right (0°) - pointing right
+  right: [
+    [1, 0],
+    [1, 1]
+  ],
+  // Down-right (45°)
+  downRight: [
+    [1, 0],
+    [0, 1]
+  ],
+  // Down (90°) - pointing down
+  down: [
+    [1, 1],
+    [0, 1]
+  ],
+  // Down-left (135°)
+  downLeft: [
+    [0, 1],
+    [1, 0]
+  ],
+  // Left (180°) - pointing left
+  left: [
+    [0, 1],
+    [1, 1]
+  ],
+  // Up-left (225°)
+  upLeft: [
+    [1, 0],
+    [0, 1]
+  ],
+  // Up (270°) - pointing up
+  up: [
+    [0, 1],
+    [1, 1]
+  ],
+  // Up-right (315°)
+  upRight: [
+    [0, 1],
+    [1, 0]
+  ]
+};
 
-function getDirectionFromAngle(angle: number): Direction {
+function getDirectionFromAngle(angle: number): keyof typeof ARROWHEAD_MASKS {
   // Normalize angle to 0-360
   const normalizedAngle = ((angle % 360) + 360) % 360;
   
@@ -26,78 +67,6 @@ function getDirectionFromAngle(angle: number): Direction {
   if (normalizedAngle >= 202.5 && normalizedAngle < 247.5) return 'upLeft';
   if (normalizedAngle >= 247.5 && normalizedAngle < 292.5) return 'up';
   return 'upRight';
-}
-
-// Generate wedge/triangular pixel arrowhead offsets for 8 directions
-// length: forward extent in pixels, base: width near the base (orthogonals), overlap: backward overlap to join line
-function getArrowHeadOffsets(dir: Direction, length = 4, base = 3, overlap = 1): Array<[number, number]> {
-  const offsets: Array<[number, number]> = [];
-
-  const add = (dx: number, dy: number) => offsets.push([dx, dy]);
-
-  // Helper for orthogonal heads - creates a proper triangular wedge
-  function ortho(forward: [number, number], side: [number, number], back: [number, number]) {
-    // backward overlap to ensure connection
-    for (let o = 1; o <= overlap; o++) {
-      add(back[0] * o, back[1] * o);
-    }
-    
-    // Create triangular wedge by varying width as we go forward
-    for (let t = 0; t < length; t++) {
-      // Main spine pixel
-      add(forward[0] * t, forward[1] * t);
-      
-      // Side pixels that get narrower as we go forward
-      // At t=0 (base): full width, at t=length-1 (tip): no width
-      const width = Math.floor(base * (length - 1 - t) / (length - 1));
-      for (let s = 1; s <= width; s++) {
-        add(forward[0] * t + side[0] * s, forward[1] * t + side[1] * s);
-        add(forward[0] * t - side[0] * s, forward[1] * t - side[1] * s);
-      }
-    }
-  }
-
-  // Helper for diagonal heads - creates a proper diagonal triangular wedge
-  function diag(step: [number, number]) {
-    const sx = step[0], sy = step[1];
-    
-    // backward overlap along the diagonal direction
-    for (let o = 1; o <= overlap; o++) {
-      add(-sx * o, -sy * o);
-    }
-    
-    // Create triangular wedge along diagonal
-    for (let t = 0; t < length; t++) {
-      // Main spine pixel
-      add(sx * t, sy * t);
-      
-      // Side pixels that get narrower as we go forward
-      // For diagonals, we add pixels orthogonal to the main direction
-      const width = Math.floor(base * (length - 1 - t) / (length - 1));
-      
-      // Get orthogonal directions for the diagonal
-      const ortho1 = [-sy, sx]; // perpendicular vector
-      const ortho2 = [sy, -sx]; // opposite perpendicular vector
-      
-      for (let s = 1; s <= width; s++) {
-        add(sx * t + ortho1[0] * s, sy * t + ortho1[1] * s);
-        add(sx * t + ortho2[0] * s, sy * t + ortho2[1] * s);
-      }
-    }
-  }
-
-  switch (dir) {
-    case 'right':      ortho([1, 0], [0, 1], [-1, 0]); break;
-    case 'left':       ortho([-1, 0], [0, 1], [1, 0]); break;
-    case 'down':       ortho([0, 1], [1, 0], [0, -1]); break;
-    case 'up':         ortho([0, -1], [1, 0], [0, 1]); break;
-    case 'downRight':  diag([1, 1]); break;
-    case 'upRight':    diag([1, -1]); break;
-    case 'downLeft':   diag([-1, 1]); break;
-    case 'upLeft':     diag([-1, -1]); break;
-  }
-
-  return offsets;
 }
 
 function samplePathPoints(pathData: string, stepSize: number = 2): Point[] {
@@ -162,30 +131,30 @@ function drawPixelCurve(ctx: CanvasRenderingContext2D, points: Point[]) {
   }
 }
 
-function drawPixelArrowhead(ctx: CanvasRenderingContext2D, endPoint: Point, direction: Point, length = 5, base = 4, overlap = 1) {
-  // Skip if no valid direction
-  if (direction.x === 0 && direction.y === 0) {
-    // Fallback: small right-pointing wedge with overlap
-    const fallbackOffsets = getArrowHeadOffsets('right', length, base, overlap);
-    for (const [dx, dy] of fallbackOffsets) {
-      ctx.fillRect(endPoint.x + dx, endPoint.y + dy, 1, 1);
-    }
-    return;
-  }
-  
+function drawPixelArrowhead(ctx: CanvasRenderingContext2D, endPoint: Point, direction: Point) {
   // Calculate angle from direction vector
   const angle = Math.atan2(direction.y, direction.x) * (180 / Math.PI);
   const arrowDirection = getDirectionFromAngle(angle);
-  const offsets = getArrowHeadOffsets(arrowDirection, length, base, overlap);
-
-  // Anchor at the true endPoint so the head joins the line
-  const baseX = endPoint.x;
-  const baseY = endPoint.y;
-
-  for (const [dx, dy] of offsets) {
-    const x = baseX + dx;
-    const y = baseY + dy;
-    ctx.fillRect(x, y, 1, 1);
+  const mask = ARROWHEAD_MASKS[arrowDirection];
+  
+  // Position arrowhead slightly ahead of the line end
+  const length = Math.hypot(direction.x, direction.y) || 1;
+  const normalizedDx = direction.x / length;
+  const normalizedDy = direction.y / length;
+  
+  // Move the arrowhead 1 pixel forward in the direction of the line
+  const arrowX = Math.round(endPoint.x + normalizedDx);
+  const arrowY = Math.round(endPoint.y + normalizedDy);
+  
+  // Draw the 2x2 arrowhead mask
+  for (let row = 0; row < mask.length; row++) {
+    for (let col = 0; col < mask[row].length; col++) {
+      if (mask[row][col] === 1) {
+        const x = arrowX + col - 1; // Center the 2x2 mask
+        const y = arrowY + row - 1;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
   }
 }
 
@@ -225,65 +194,36 @@ export function PixelArrowCanvas({ width, height, arrows }: PixelArrowCanvasProp
     offscreenCtx.clearRect(0, 0, offscreenWidth, offscreenHeight);
     ctx.clearRect(0, 0, width, height);
     
-    // Prepare processed arrows: trimmed curve + head data
-    type Processed = { curvePoints: Point[]; headEnd: Point; headDir: Point; headLength: number; headBase: number; overlap: number };
-    const processed: Processed[] = [];
-
+    // Set pixel color
+    offscreenCtx.fillStyle = '#212121';
+    
+    // Draw each arrow
     arrows.forEach(arrow => {
+      // Sample points along the curve
       const points = samplePathPoints(arrow.pathData, 2);
+      
+      // Scale points down for offscreen canvas
       const scaledPoints = points.map(p => ({
         x: Math.round(p.x / scaleFactor),
         y: Math.round(p.y / scaleFactor)
       }));
-
-      if (scaledPoints.length < 2) return;
-
-      // Deduplicate consecutive identical points (post-quantization)
-      const deduped: Point[] = [];
-      for (let i = 0; i < scaledPoints.length; i++) {
-        const p = scaledPoints[i];
-        if (i === 0 || p.x !== scaledPoints[i - 1].x || p.y !== scaledPoints[i - 1].y) deduped.push(p);
+      
+      if (scaledPoints.length >= 2) {
+        // Draw the curve
+        drawPixelCurve(offscreenCtx, scaledPoints);
+        
+        // Calculate direction for arrowhead from last two points
+        const endPoint = scaledPoints[scaledPoints.length - 1];
+        const prevPoint = scaledPoints[scaledPoints.length - 2];
+        const direction = {
+          x: endPoint.x - prevPoint.x,
+          y: endPoint.y - prevPoint.y
+        };
+        
+        // Draw arrowhead
+        drawPixelArrowhead(offscreenCtx, endPoint, direction);
       }
-      if (deduped.length < 2) return;
-
-      // Direction from last two distinct points (search backward if needed)
-      const endPoint = deduped[deduped.length - 1];
-      let prevIdx = deduped.length - 2;
-      while (prevIdx >= 0 && deduped[prevIdx].x === endPoint.x && deduped[prevIdx].y === endPoint.y) prevIdx--;
-      const prevPoint = prevIdx >= 0 ? deduped[prevIdx] : deduped[Math.max(0, deduped.length - 2)];
-      const headDir = { x: endPoint.x - prevPoint.x, y: endPoint.y - prevPoint.y };
-
-      // Head parameters in offscreen pixel units
-      const headLength = 5; // forward extent
-      const headBase = 4;   // base width
-      const overlap = 3;    // backward overlap for attachment (increased to close gap)
-      const trimTail = headLength - overlap; // ensure line ends before head (2 pixels)
-      const trimStart = 2; // trim start 2px to avoid intersecting incoming heads
-
-      // Apply trimming to curve points; ensure at least 2 points remain
-      const startIdx = Math.min(trimStart, Math.max(0, deduped.length - 3));
-      const endIdxExclusive = Math.max(startIdx + 2, deduped.length - trimTail);
-      const curvePoints = deduped.slice(startIdx, endIdxExclusive);
-      if (curvePoints.length < 2) {
-        // If too short to draw curve, still queue head
-        processed.push({ curvePoints: [], headEnd: endPoint, headDir, headLength, headBase, overlap });
-        return;
-      }
-
-      processed.push({ curvePoints, headEnd: endPoint, headDir, headLength, headBase, overlap });
     });
-
-    // Pass 1: draw all curves in blue
-    offscreenCtx.fillStyle = '#0b4596';
-    for (const a of processed) {
-      if (a.curvePoints.length >= 2) drawPixelCurve(offscreenCtx, a.curvePoints);
-    }
-
-    // Pass 2: draw all heads on top in blue (same color for consistency)
-    offscreenCtx.fillStyle = '#0b4596';
-    for (const a of processed) {
-      drawPixelArrowhead(offscreenCtx, a.headEnd, a.headDir, a.headLength, a.headBase, a.overlap);
-    }
     
     // Scale up to main canvas with nearest neighbor
     ctx.drawImage(

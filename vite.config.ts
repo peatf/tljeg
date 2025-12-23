@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import svgr from 'vite-plugin-svgr';
 import { VitePWA } from 'vite-plugin-pwa';
-import { visualizer } from 'rollup-plugin-visualizer';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -12,12 +11,6 @@ export default defineConfig({
   plugins: [
   react(),
   svgr(),
-    visualizer({ 
-      filename: 'dist/stats.html',
-      open: false,
-      gzipSize: true,
-      brotliSize: true
-    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icons/*', 'models/**/*'],
@@ -25,10 +18,9 @@ export default defineConfig({
         name: 'Timeline Jumping Artifact',
         short_name: 'TJE Guide',
         description: 'Privacy-first somatic practice tool for timeline jumping embodiment',
-        theme_color: '#f2eee6',
-        background_color: '#fafbec',
+        theme_color: '#1f2937',
+        background_color: '#111827',
         display: 'standalone',
-        display_override: ['window-controls-overlay', 'standalone'],
         scope: '/',
         start_url: '/',
         orientation: 'portrait',
@@ -63,22 +55,6 @@ export default defineConfig({
             type: 'image/svg+xml',
             purpose: 'any'
           }
-        ],
-        shortcuts: [
-          {
-            name: 'Timeline Jump Flow',
-            short_name: 'Flow',
-            description: 'Access the timeline jumping flow',
-            url: '/artifact',
-            icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }]
-          },
-          {
-            name: 'Text Guide',
-            short_name: 'Text',
-            description: 'Read the text guide',
-            url: '/text',
-            icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }]
-          }
         ]
       },
       workbox: {
@@ -108,34 +84,7 @@ export default defineConfig({
     })
   ],
   build: {
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-        pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn'],
-        passes: 3
-      },
-      format: {
-        comments: false,
-      },
-      mangle: {
-        // Keep property names for compatibility
-        properties: false,
-        safari10: true
-      }
-    },
-    sourcemap: false, // Disable public sourcemaps
-    rollupOptions: {
-      output: {
-        // Split chunks for better caching
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ml: ['@xenova/transformers'],
-          animations: ['framer-motion']
-        }
-      }
-    }
+    sourcemap: true
   }
 });
+
