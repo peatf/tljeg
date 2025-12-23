@@ -1,6 +1,6 @@
 Page 01
-![Timeline Jumping Logo](/assets/logo.svg)
 TIMELINE JUMPING IS THE PROCESS OF BECOMING A FERTILE ENVIRONMENT WHERE YOUR DESIRES MUST THRIVE
+Timeline JumpingEMBODIMENT GUIDE 2. 0
 
 Page 02
 Timeline Jumping
@@ -78,4 +78,3 @@ The chosen self will not feel vastly different than the old self because it is s
 This process is not here to “fix” you, it is a process of embracing YOU just on a preferred timeline. Jumping timelines requires acceptance of your current timeline with love. You cannot jump timelines while energetically being at war with the one you are on because that attaches you to it. The “new” self is you but it responds a little bit differently than the previous version. It does not dominate without permission.
 I recommend practicing this as often as you feel called until it feels natural. And even then keep practicing if it excites you.
 This guide is a text based guide that is designed to be paired with the Timeline Jumping Audio. If you have another embodiment practice that involves connecting to various parts of yourself in the body this guide will pair well with that too. Embodiment is not the result of learning more it is the result of being, being with all of the self including the body. The Timeline Jumping Audio collapses all of what is written here into a 20 minute experience using visualization, breath, and awareness. The audio isn’t necessary but it absolutely helps this process to unfold with added ease.
-

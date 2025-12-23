@@ -15,7 +15,7 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByRole('heading', { name: /Calibration/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Grounding/ })).toBeInTheDocument();
     expect(screen.getByLabelText(/Proof input/)).toBeInTheDocument();
   });
 
@@ -28,7 +28,7 @@ describe('Scenes render', () => {
       </MemoryRouter>
     );
     expect(screen.getByText(/Implementation/)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Plan title/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Spec label/)).toBeInTheDocument();
   });
 
   it('deep-link focuses Calibration proof', async () => {
@@ -63,12 +63,12 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    
+
     // Add multiple labels
     const input = screen.getByPlaceholderText(/failure, tired/);
     fireEvent.change(input, { target: { value: 'stress, overwhelm, doubt' } });
-    fireEvent.click(screen.getByText('ADD LABEL'));
-    
+    fireEvent.click(screen.getByText('Add Label'));
+
     // Should show labels
     expect(screen.getByText('stress')).toBeInTheDocument();
     expect(screen.getByText('overwhelm')).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    
+
     expect(screen.getByLabelText('Yes')).toBeInTheDocument();
     expect(screen.getByLabelText('Not yet')).toBeInTheDocument();
     expect(screen.getByText(/Consent check-in/)).toBeInTheDocument();
@@ -97,15 +97,10 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    
-    // First enter body readiness to enable the form
-    const bodyInput = screen.getByLabelText(/Body readiness reflection/);
-    fireEvent.change(bodyInput, { target: { value: 'I feel ready' } });
-    
-    // Now the form should be enabled and we can test the "Not yet" flow
+
     fireEvent.click(screen.getByLabelText('Not yet'));
     await waitFor(() => {
-      expect(screen.getByLabelText(/WHY NOT YET/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Why not yet/)).toBeInTheDocument();
     });
   });
 
@@ -117,13 +112,8 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    
-    // First enter body readiness to enable the form
-    const bodyInput = screen.getByLabelText(/Body readiness reflection/);
-    fireEvent.change(bodyInput, { target: { value: 'I feel ready' } });
-    
-    // Now the scan button should be enabled
-    fireEvent.click(screen.getByText('Start 30s scan'));
+
+    fireEvent.click(screen.getByText('Start 30-second scan'));
     await waitFor(() => {
       expect(screen.getByText(/Notice your breath/)).toBeInTheDocument();
     });
@@ -137,7 +127,7 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    
+
     expect(screen.getByRole('heading', { name: /Clarity/ })).toBeInTheDocument();
     expect(screen.getByLabelText(/What's working/)).toBeInTheDocument();
   });
@@ -146,7 +136,7 @@ describe('Scenes render', () => {
     // Mock overlap data in localStorage to simulate Clarity → Calibration flow
     const overlapData = { text: 'test overlap', trait: 'courage', created_at: Date.now() };
     localStorage.setItem('tja-overlap-preload', JSON.stringify(overlapData));
-    
+
     render(
       <MemoryRouter initialEntries={["/calibration"]}>
         <Routes>
@@ -154,11 +144,11 @@ describe('Scenes render', () => {
         </Routes>
       </MemoryRouter>
     );
-    
+
     await waitFor(() => {
       expect(screen.getByText(/test overlap/)).toBeInTheDocument();
     });
-    
+
     // Clean up
     localStorage.removeItem('tja-overlap-preload');
   });

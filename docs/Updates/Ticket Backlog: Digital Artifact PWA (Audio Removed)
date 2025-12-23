@@ -1,0 +1,184 @@
+Scope: Implement UX, accessibility, performance, ML, data, and navigation fixes/improvements across the 7-scene flow.
+Out of scope: Audio import/playback (feature removed).
+0) Global & Navigation
+0.1 Add “Switch Mode” from Settings
+Type: Feature • Priority: P1 • Effort: S
+Description: Allow users to switch between Text-Only and Digital Artifact from Settings (non-prominent control).
+Acceptance Criteria:
+Settings screen includes “Mode” with current selection and a switcher.
+Switching mode soft-restarts to Home/Flow Map without data loss.
+Persist last used mode in IndexedDB; read on launch.
+Notes: No modal on change; use subtle toast “Mode updated.”
+0.2 Resume Last Scene on Re-open
+Type: Feature • Priority: P1 • Effort: S
+Description: Persist last visited scene and scroll/step index; offer “Return to Flow Map” button on resume.
+Acceptance Criteria:
+On app launch, resume to last scene unless first-run.
+“Return to Flow Map” always available in the top system menu.
+Dependencies: 6.x Data/Storage utilities.
+0.3 Flow Map Legend & “Return to VOID”
+Type: UX • Priority: P2 • Effort: S
+Description: Add a 1-line legend per scene and a persistent “Return to VOID” control on the map.
+Acceptance Criteria:
+Legend renders under each scene node.
+“Return to VOID” jumps to VOID scene from anywhere.
+1) Timers, Motion, Gestures (Accessibility & UX)
+1.1 Universal Pause/Skip for Timed Segments
+Type: Accessibility • Priority: P0 • Effort: M
+Description: All timed guidance (30s/45s/60s/2m) must have Pause and Skip controls; timers resume correctly.
+Acceptance Criteria:
+Each timed UI exposes Pause/Skip visible by default.
+State machine: Running → Paused → Resume; Skip ends step successfully.
+E2E tests cover Safety, Clarity, Calibration, VOID.
+Notes: Respect prefers-reduced-motion.
+1.2 Reduced-Motion Variants
+Type: Accessibility • Priority: P1 • Effort: S
+Description: Replace motion/rotation effects with fade/static if prefers-reduced-motion is on.
+Acceptance Criteria:
+VOID rotating anchor words switch to subtle fade or static.
+Scene transitions use crossfade instead of slide/scale.
+1.3 Gesture Alternatives Everywhere
+Type: Accessibility • Priority: P0 • Effort: S
+Description: All gestures must have on-screen and keyboard alternatives.
+Acceptance Criteria:
+VOID entry: on-screen button + keyboard shortcut (e.g., V).
+Two-finger tap retained as optional; not required.
+Keyboard nav docs surfaced in Help.
+2) Scene: Safety – Somatic Check-In
+2.1 Define “A part says no” Completion & Exit
+Type: UX/Logic • Priority: P1 • Effort: S
+Description: Make completion state explicit and provide a clear exit/park flow.
+Acceptance Criteria:
+User can name/acknowledge the part, optionally add a note.
+“Park for later” stores a gentle reminder token (no push).
+Returning later surfaces a subtle prompt to revisit.
+2.2 Flexible Check-In Duration
+Type: UX • Priority: P2 • Effort: S
+Description: Allow user to choose 15/30/45s before starting scan.
+Acceptance Criteria: Duration selector remembered per user; default 30s.
+2.3 Persist Environment Chips
+Type: UX • Priority: P3 • Effort: S
+Description: Pre-select last chosen environment chips on next visit.
+Acceptance Criteria: Chips are saved/reloaded; user can clear.
+3) Scene: Clarity – Chosen Self & Overlap
+3.1 Trait Synonym Map & Deduplication
+Type: Data/ML • Priority: P0 • Effort: M
+Description: Collapse trait synonyms (e.g., spacious=roomy/calm) to prevent chip bloat.
+Acceptance Criteria:
+Add a small hand-curated synonym map; apply on entry/save.
+Chips display canonical label; original term kept in metadata.
+No duplicate chips after save.
+3.2 Limit Active Traits
+Type: UX • Priority: P2 • Effort: S
+Description: Cap live rehearsal traits to max 3; provide rationale tooltip.
+Acceptance Criteria: Attempting to add >3 shows gentle inline hint.
+3.3 Low-Motion Rehearsal Cues
+Type: Accessibility • Priority: P1 • Effort: S
+Description: Provide still/low-motion guidance text for the 45s rehearsal.
+Acceptance Criteria: Auto-applies for reduced-motion; toggle available.
+4) Scene: Calibration – Normalization
+4.1 Friction Taxonomy
+Type: Data/UX • Priority: P0 • Effort: M
+Description: Define tagged categories (e.g., tooling, environment, social, energy) and apply across suggestions/logs.
+Acceptance Criteria:
+Users can tag a friction with one category.
+Filters by category in Release Notes and Calibration pickers.
+ML suggestions include category in metadata.
+4.2 Seed vs. Personal Provenance Badges
+Type: UX • Priority: P2 • Effort: S
+Description: Visually distinguish seeded vs. user-derived contexts/frictions.
+Acceptance Criteria: Badges “Seed” / “From you” render wherever items appear.
+4.3 Optional Local Reminder for Tomorrow’s Friction
+Type: Feature • Priority: P3 • Effort: M
+Description: Offer optional local (non-push) reminder card on next app open.
+Acceptance Criteria: If opted in, show lightweight reminder card with “Mark done / Snooze / Dismiss.”
+Notes: No push notifications; offline only.
+5) Scene: VOID – The Hinge
+5.1 On-Screen & Keyboard Entry + Escape Hatch
+Type: Accessibility • Priority: P0 • Effort: S
+Description: Add visible “Enter VOID” button and keyboard shortcut; add visible exit control during neutral hold.
+Acceptance Criteria:
+Enter via button or V; exit via “End now” or Esc.
+Timer respects Pause/Skip (see 1.1).
+Reduced-motion variant active as needed.
+5.2 Neutral Language Reframing (Post-VOID)
+Type: ML • Priority: P2 • Effort: M
+Description: Convert charged pre-void labels to neutral phrasing using lightweight offline heuristics/model.
+Acceptance Criteria:
+Given labeled inputs, output neutralized phrases.
+User can accept/edit or discard reframes.
+6) Scene: Runtime – Operating Spec & Release Notes
+6.1 Operating Spec Editing with Audit Note
+Type: Feature • Priority: P1 • Effort: S
+Description: Allow edits to Label/Principle/Micro-acts/Friction for the current/previous day with an auto “Edited” note.
+Acceptance Criteria: Inline edit; append “Edited (hh:mm)” to the day.
+6.2 Quick Log → Evidence Shelf Link-Back
+Type: Data/UX • Priority: P1 • Effort: M
+Description: Completed micro-acts can be promoted to an Evidence item with one tap.
+Acceptance Criteria: From a log entry, “Promote to Evidence” creates a normalized item visible in Calibration.
+6.3 Release Notes Filters & Micro-Celebrations
+Type: UX • Priority: P2 • Effort: M
+Description: Filter Release Notes by friction category/date; add subtle completion confetti pulse (reduced-motion aware).
+Acceptance Criteria: Filters persist; minimal celebration respects preferences.
+7) Scene: Resets / FAQ
+7.1 Highlight Explanation + Dismiss/Snooze
+Type: UX • Priority: P2 • Effort: S
+Description: When surfacing “Halve the distance,” show a one-line why (e.g., key phrase detected) and allow dismiss/snooze.
+Acceptance Criteria: Tooltip or footnote explains highlight; user choice remembered.
+8) ML & Performance
+8.1 Lazy-Load ML by Scene
+Type: Performance • Priority: P0 • Effort: M
+Description: Load Transformers.js/model bundles on first use per scene (Safety/Clarity/Calibration/VOID), not at app boot.
+Acceptance Criteria: First meaningful interaction <2s on mid-range device; cold boot <1s to Home.
+8.2 Device Capability Detection & Fallbacks
+Type: Performance • Priority: P1 • Effort: M
+Description: Detect WASM SIMD/WebGPU; fall back to heuristics if unsupported.
+Acceptance Criteria: Capability flags stored; model path chosen accordingly; heuristic path covered by tests.
+8.3 Bundle Budget Guardrail (CI)
+Type: DevEx • Priority: P1 • Effort: S
+Description: CI fails build if main + critical chunks exceed target sizes.
+Acceptance Criteria: Thresholds documented; PR breaks when exceeded; includes report artifact.
+9) Data, Privacy & Storage
+9.1 Data Usage Meter
+Type: UX • Priority: P2 • Effort: S
+Description: Show approximate local storage usage and “Manage Data.”
+Acceptance Criteria: Displays used/available; links to Export/Wipe.
+9.2 Export / Wipe All / Local Passcode Lock
+Type: Security/UX • Priority: P0 • Effort: M
+Description: Export JSON of all user data, wipe all data, optional 4-digit local passcode to open app.
+Acceptance Criteria:
+Export downloads a JSON file; import not required.
+Wipe clears IndexedDB + caches; app returns to first-run.
+Passcode requested on app open (stored locally, offline).
+9.3 “Reveal Data” Plaintext View Polish
+Type: UX • Priority: P3 • Effort: S
+Description: Improve formatting (sections, timestamps) and add copy button.
+Acceptance Criteria: Human-legible blocks; one-tap copy.
+10) PWA & Service Worker
+10.1 Explicit Cache Versioning
+Type: Infra • Priority: P1 • Effort: S
+Description: Version cache names; clean obsolete caches on activate.
+Acceptance Criteria: Old caches removed on SW activate; smoke test verifies.
+10.2 In-App “Update Ready” Toast
+Type: UX • Priority: P2 • Effort: S
+Description: When a new SW is waiting, show a toast: “Update ready → Refresh.”
+Acceptance Criteria: Clicking action calls skipWaiting + refreshes safely.
+11) QA & Documentation
+11.1 E2E Accessibility Tests for Timers/Gestures
+Type: QA • Priority: P0 • Effort: M
+Description: Automated tests verify Pause/Skip, keyboard alternatives, reduced-motion across scenes.
+Acceptance Criteria: CI runs headless tests on Safety/Clarity/Calibration/VOID.
+11.2 Help / Keyboard Shortcuts Sheet
+Type: Docs • Priority: P3 • Effort: S
+Description: Add a compact help panel listing keyboard commands and gesture alternatives.
+Acceptance Criteria: Accessible from system menu; searchable.
+12) Housekeeping (Audio Removal)
+12.1 Remove Audio Integration
+Type: Cleanup • Priority: P0 • Effort: S
+Description: Strip audio import/playback UI, state, caching; remove copy; migration script to delete audio blobs if present.
+Acceptance Criteria:
+No audio controls or references in UI.
+IndexedDB cleanup removes audio keys.
+Backward-compat: old users don’t error on load.
+Suggested Labels
+area:navigation, area:accessibility, area:ml, area:runtime, area:calibration, area:void, area:data, area:pwa, perf, qa, cleanup, p0/p1/p2/p3, effort:S/M/L

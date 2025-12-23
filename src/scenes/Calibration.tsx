@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
 import { addContext, listContexts, deleteContext, listEntries } from '../storage/storage';
 import { ingestUserText } from '../ml';
+import StackedButton from '../components/ui/StackedButton';
 
 // Evocative context options for rehearsal
 const REHEARSAL_CONTEXTS = [
@@ -175,7 +176,7 @@ export default function Grounding() {
       )}
       <header className="grid gap-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-humanist">Grounding</h1>
+          <h1 className="text-2xl font-bold doto-base doto-700">Grounding</h1>
           <span className="text-sm text-ink-500">{sectionsComplete} of 3 complete</span>
         </div>
         <p className="text-ink-700 text-sm">Making clarity real in everyday life. Proof keeps the shift believable.</p>
@@ -243,14 +244,14 @@ export default function Grounding() {
           placeholder="Ex: I calmly answered an email while tired."
           aria-label="Proof input"
         />
-        <button
-          className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800"
+        <StackedButton
+          className="rect-btn--sm"
           onClick={saveProof}
           disabled={!proof.trim()}
           aria-label="Save proof"
         >
-          Save Proof
-        </button>
+          SAVE PROOF
+        </StackedButton>
         {proofEntries.length > 0 && (
           <div className="mt-2">
             <h3 className="text-sm text-ink-600 mb-2">Saved Proofs</h3>
@@ -403,14 +404,14 @@ export default function Grounding() {
           disabled={!hasProof}
           aria-label="Stretch input"
         />
-        <button
-          className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800"
+        <StackedButton
+          className="rect-btn--sm"
           onClick={saveStretch}
           disabled={!hasProof || !stretch.trim()}
           aria-label="Save stretch"
         >
-          Save This Edge
-        </button>
+          SAVE THIS EDGE
+        </StackedButton>
         {stretchEntries.length > 0 && (
           <div className="mt-2">
             <h3 className="text-sm text-ink-600 mb-2">Saved Edges</h3>

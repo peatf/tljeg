@@ -1,13 +1,16 @@
 import { useRef, useState, useEffect } from 'react';
 // Inline-controllable SVG for breathing animation
-import BreathingIllustration from '../assets/breathing.svg?react';
 // Fallback raster for wide support
-import voidWebp from '../assets/VOID_1.webp';
 import { useSearchParams } from 'react-router-dom';
-import Timer from '../components/Timer';
 import { addEntry } from '../storage/storage';
 import DissolveWord from '../components/DissolveWord';
 import { useReducedMotionPref } from '../hooks/useReducedMotionPref';
+import { StackedButton } from '../components/ui';
+import InputPanel from '../components/ui/InputPanel';
+import VoidLabel from '../components/VoidLabel';
+import AnchorPreview from '../components/AnchorPreview';
+import ImmersiveHoldSpace from '../components/ImmersiveHoldSpace';
+import LabelInsights from '../components/LabelInsights';
 
 type VoidState = 'enter_labels' | 'choose_anchor' | 'hold' | 'release' | 'integration';
 
@@ -229,58 +232,61 @@ export default function VOIDScene() {
     return (
       <section className="grid gap-6">
         <header className="grid gap-2">
-          <h1 className="text-2xl font-bold font-humanist">VOID{autostart ? ' (Quick Start)' : ''}</h1>
-          <p className="text-ink-700 text-sm">{autostart ? 'Ready to dissolve. Add your labels and begin.' : 'VOID is rest between steps. It\'s where you dissolve what you were before picking up what\'s next.'}</p>
-          <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
-            The void is the lift-off point. In this neutral space, you release labels and judgments to create space for movement. Sit here for a moment. Let the last step settle before moving forward.
-          </div>
+          <h1 className="text-2xl font-bold doto-base doto-700">VOID{autostart ? ' (Quick Start)' : ''}</h1>
+          <p className="text-ink-700 text-sm">{autostart ? 'Ready to dissolve. Add your labels and begin.' : 'VOID is a shower. VOID is the dissolve. Labels melt here, good or bad, success or failure, they soften until they disappear. Neutrality creates breathing room. Your being relaxes, no longer defending or rejecting a label. And in that emptiness, possibility pulls you forward. VOID is powerful because when you let go, space opens. And because desire is magnetic space naturally calls in the new identity you\'ve been clarifying and calibrating.'}</p>
         </header>
 
         <div className="grid gap-4">
           <h2 className="text-lg font-semibold">What labels feel heavy right now?</h2>
 
           <div className="grid gap-3">
-            <input
-              type="text"
-              ref={labelInputRef}
-              value={labelInput}
-              onChange={(e) => setLabelInput(e.target.value)}
-              className="border p-3 rounded"
+            <InputPanel
+              label="LABELS"
               placeholder="failure, tired, too much…"
+              value={labelInput}
+              onChange={(e) => setLabelInput((e.target as HTMLInputElement).value)}
               onKeyDown={(e) => e.key === 'Enter' && addLabelsFromInput()}
+              ref={labelInputRef as any}
             />
-            <button
+            <StackedButton
               onClick={addLabelsFromInput}
               disabled={!labelInput.trim()}
-              className="px-4 py-2 bg-ink-900 text-bone-50 rounded disabled:opacity-50"
+              aria-label="Add Label"
+              className="rect-btn--sm"
             >
-              Add Label
-            </button>
+              ADD LABEL
+            </StackedButton>
           </div>
 
           {labels.length > 0 && (
             <div className="grid gap-3">
               <h3 className="font-medium">Labels to dissolve:</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-3 p-6 bg-stone-25 border border-stone-100 min-h-20">
                 {labels.map((label, index) => (
-                  <div key={index} className="flex items-center gap-2 px-3 py-2 bg-red-100 text-red-800 rounded">
-                    <span>{label}</span>
-                    <button
-                      onClick={() => removeLabel(index)}
-                      className="text-red-600 hover:text-red-800"
-                      aria-label={`Remove ${label}`}
-                    >
-                      ×
-                    </button>
-                  </div>
+                  <VoidLabel
+                    key={index}
+                    text={label}
+                    variant={['orb', 'fragment', 'glitch'][index % 3] as any}
+                    onRemove={() => removeLabel(index)}
+                  />
                 ))}
               </div>
-              <button
+
+              <LabelInsights
+                labels={labels}
+                onClusterSuggestion={(cluster) => {
+                  // Optional: could focus the experience on a specific theme
+                  console.log('Focus on theme:', cluster.theme);
+                }}
+              />
+
+              <StackedButton
                 onClick={() => setState('choose_anchor')}
-                className="px-4 py-2 bg-purple-600 text-white rounded"
+                aria-label="Continue to Anchor Selection"
+                className="rect-btn--wide"
               >
-                Continue to Grounding Method
-              </button>
+                CONTINUE TO ANCHOR SELECTION
+              </StackedButton>
             </div>
           )}
         </div>
@@ -292,12 +298,12 @@ export default function VOIDScene() {
     return (
       <section className="grid gap-6">
         <header className="grid gap-2">
-          <h1 className="text-2xl font-bold font-humanist">Choose Your Grounding Method</h1>
-          <p className="text-ink-700 text-sm">Select something to hold your attention during the dissolve.</p>
+          <h1 className="text-2xl font-bold doto-base doto-700">Choose Your Anchor</h1>
+          <p className="text-ink-700 text-sm">Select something to hold your attention during the ritual. Pick your favorite meditative sound and play that as a companion if you would like. Or if you want a guided Timeline Jump, grab <a href="https://www.peathefeary.com/classesandaudios/p/timeline-jumping-audio" className="text-purple-600 hover:text-purple-800 underline" target="_blank" rel="noopener noreferrer">one here</a>.</p>
         </header>
 
         <div className="grid gap-4">
-          <div className="grid gap-3">
+          <div className="grid gap-4">
             {[
               { type: 'breath_2_2_4' as const, label: 'Breath 2-2-4', desc: 'Inhale 2, hold 2, exhale 4' },
               { type: 'breath_steady_4' as const, label: 'Breath steady 4', desc: 'Steady 4-count breathing' },
@@ -305,15 +311,15 @@ export default function VOIDScene() {
               { type: 'stillness' as const, label: 'Stillness', desc: 'Pure awareness, no technique' },
               { type: 'custom' as const, label: 'Custom', desc: 'Your own anchor' }
             ].map((anchor) => (
-              <button
+              <AnchorPreview
                 key={anchor.type}
+                type={anchor.type}
+                isSelected={selectedAnchor?.type === anchor.type}
                 onClick={() => selectAnchor(anchor.type)}
-                className={`p-4 border rounded-lg text-left hover:bg-bone-50 ${selectedAnchor?.type === anchor.type ? 'border-purple-500 bg-purple-50' : ''
-                  }`}
-              >
-                <div className="font-medium">{anchor.label}</div>
-                <div className="text-sm text-ink-600">{anchor.desc}</div>
-              </button>
+                label={anchor.label}
+                description={anchor.desc}
+                customValue={customAnchor}
+              />
             ))}
           </div>
 
@@ -349,75 +355,45 @@ export default function VOIDScene() {
   }
 
   if (state === 'hold') {
+    if (!selectedAnchor) return null;
+
     return (
-      <section className="grid gap-6 text-center">
-        <div className="grid gap-4">
-          <h1 className="text-2xl font-bold font-humanist">Holding Space</h1>
-          <div className="text-lg">Anchor: {selectedAnchor && getAnchorDisplay(selectedAnchor)}</div>
-
-          {/* Decorative/illustrative breathing SVG - accessible name provided; respect reduced motion */}
-          <div className="mx-auto" role="img" aria-label="Breathing illustration" title="Breathing illustration">
-            {!reducedMotion ? (
-              <BreathingIllustration aria-hidden={false} />
-            ) : (
-              <img src={voidWebp} alt="Breathing decoration" loading="lazy" />
-            )}
-          </div>
-
-          <div className="text-4xl font-mono">
-            {Math.floor(actualHoldTime / 60)}:{(actualHoldTime % 60).toString().padStart(2, '0')}
-          </div>
-
-          {isPaused && <div className="text-yellow-600">PAUSED</div>}
-
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={togglePause}
-              className="px-4 py-2 border rounded"
-            >
-              {isPaused ? 'Resume' : 'Pause'}
-            </button>
-            <button
-              onClick={() => confirm('End VOID session early?') && endHold()}
-              className="px-4 py-2 border rounded text-red-600"
-            >
-              End Early
-            </button>
-          </div>
-
-          <div className="text-sm text-ink-600">
-            Space to pause/resume • Esc to end early
-          </div>
-
-          {actualHoldTime >= holdSeconds && (
-            <button
-              onClick={endHold}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg text-lg"
-            >
-              Complete Hold
-            </button>
-          )}
-        </div>
-      </section>
+      <ImmersiveHoldSpace
+        anchor={selectedAnchor}
+        labels={labels}
+        actualHoldTime={actualHoldTime}
+        isPaused={isPaused}
+        onTogglePause={togglePause}
+        onEndEarly={endHold}
+        onComplete={endHold}
+        holdSeconds={holdSeconds}
+      />
     );
   }
 
   if (state === 'release') {
     return (
-      <section className="grid gap-6 text-center">
-        <header className="grid gap-2">
-          <h1 className="text-2xl font-bold font-humanist">Release</h1>
-          <p className="text-ink-700 text-sm">Watch the labels dissolve...</p>
-        </header>
+      <section className="fixed inset-0 flex flex-col items-center justify-center text-center overflow-hidden z-50">
+        {/* Charcoal black multi-layer overlay */}
+        <div className="absolute inset-0 bg-[#1a1a1a]" style={{ opacity: 0.85 }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2a2a2a] to-[#0a0a0a]" style={{ opacity: 0.6 }} />
+        <div className="absolute inset-0 bg-black" style={{ opacity: 0.3 }} />
 
-        <div className="grid gap-4">
-          {dissolvingLabels.map((label, index) => (
-            <DissolveWord key={index} text={label} delay={reducedMotion ? 0 : index * 300} />
-          ))}
+        <div className="relative z-10 grid gap-6">
+          <header className="grid gap-2">
+            <h1 className="text-2xl font-bold doto-base doto-700 text-white">Release</h1>
+            <p className="text-white/70 text-sm">congratulations!</p>
+          </header>
 
-          {dissolvingLabels.length === 0 && (
-            <div className="text-xl text-purple-600">✨ Space cleared ✨</div>
-          )}
+          <div className="grid gap-4">
+            {dissolvingLabels.map((label, index) => (
+              <DissolveWord key={index} text={label} delay={reducedMotion ? 0 : index * 300} />
+            ))}
+
+            {dissolvingLabels.length === 0 && (
+              <div className="text-xl text-purple-400">welcome to your new timeline</div>
+            )}
+          </div>
         </div>
       </section>
     );
@@ -425,54 +401,72 @@ export default function VOIDScene() {
 
   if (state === 'integration') {
     return (
-      <section className="grid gap-6">
-        <header className="grid gap-2">
-          <h1 className="text-2xl font-bold font-humanist">Integration</h1>
-          <p className="text-ink-700 text-sm">Capture what emerged from the space.</p>
-        </header>
+      <section className="fixed inset-0 flex flex-col items-center justify-center overflow-y-auto z-50 py-8">
+        {/* Charcoal black multi-layer overlay */}
+        <div className="absolute inset-0 bg-[#1a1a1a]" style={{ opacity: 0.85 }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#2a2a2a] to-[#0a0a0a]" style={{ opacity: 0.6 }} />
+        <div className="absolute inset-0 bg-black" style={{ opacity: 0.3 }} />
 
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <label htmlFor="reflection" className="font-medium">What feels different now?</label>
-            <textarea
-              id="reflection"
-              value={reflection}
-              onChange={(e) => setReflection(e.target.value)}
-              className="border p-3 rounded min-h-[80px]"
-              placeholder="Ex: chest softer, face relaxed."
+        <div className="relative z-10 grid gap-6 max-w-2xl w-full px-4">
+          <header className="grid gap-2 text-center">
+            <h1 className="text-2xl font-bold doto-base doto-700 text-white">Integration</h1>
+            <p className="text-white/70 text-sm">Capture what emerged from the space.</p>
+          </header>
+
+          <div className="grid gap-4">
+            <LabelInsights
+              labels={labels}
+              showReflectionPrompts={true}
+              onReflectionPrompt={(prompt) => {
+                setReflection(prev => prev ? prev + '\n\n' + prompt : prompt);
+              }}
             />
+
+            <div className="grid gap-2">
+              <InputPanel
+                as="textarea"
+                label="WHAT FEELS DIFFERENT NOW?"
+                id="reflection"
+                value={reflection}
+                onChange={(e) => setReflection((e.target as HTMLTextAreaElement).value)}
+                placeholder="Ex: chest softer, face relaxed."
+                className="bg-white/10 text-white"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <InputPanel
+                as="textarea"
+                label="WHAT FEELS POSSIBLE NOW?"
+                id="possibility"
+                value={possibility}
+                onChange={(e) => setPossibility((e.target as HTMLTextAreaElement).value)}
+                placeholder="Ex: send the email."
+                className="bg-white/10 text-white"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <InputPanel
+                as="textarea"
+                label="INSPIRED ACTION"
+                id="inspiration"
+                value={inspiration}
+                onChange={(e) => setInspiration((e.target as HTMLTextAreaElement).value)}
+                className="bg-white/10 text-white"
+                placeholder="Ex: reach out to that collaborator."
+              />
+            </div>
+
+            <button
+              onClick={save}
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors"
+            >
+              Save VOID Session
+            </button>
+
+            {status && <p className="text-sm text-white/60" aria-live="polite">{status}</p>}
           </div>
-
-          <div className="grid gap-2">
-            <label htmlFor="possibility" className="font-medium">What feels possible now?</label>
-            <textarea
-              id="possibility"
-              value={possibility}
-              onChange={(e) => setPossibility(e.target.value)}
-              className="border p-3 rounded min-h-[80px]"
-              placeholder="Ex: send the email."
-            />
-          </div>
-
-          <div className="grid gap-2">
-            <label htmlFor="inspiration" className="font-medium">What inspired action came through?</label>
-            <textarea
-              id="inspiration"
-              value={inspiration}
-              onChange={(e) => setInspiration(e.target.value)}
-              className="border p-3 rounded min-h-[80px]"
-              placeholder="Ex: reach out to that collaborator."
-            />
-          </div>
-
-          <button
-            onClick={save}
-            className="px-4 py-2 bg-purple-600 text-white rounded"
-          >
-            Save VOID Session
-          </button>
-
-          {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
         </div>
       </section>
     );

@@ -11,6 +11,6 @@ describe('Storage buttons', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByLabelText(/Download entries CSV/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Download spreadsheet/)).toBeInTheDocument();
   });
 });

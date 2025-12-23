@@ -82,7 +82,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<ModeSelector />} />
           <Route path="/text" element={<TextOnlyReader />} />
-          <Route path="/artifact" element={<section className="grid gap-3"><h1 className="text-2xl font-bold font-humanist text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
+          <Route path="/artifact" element={<section className="grid gap-3"><h1 className="text-2xl font-bold doto-base doto-700 text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
           <Route path="/artifact/safety" element={<Safety />} />
           <Route path="/artifact/clarity" element={<Clarity />} />
           <Route path="/artifact/void" element={<VOIDScene />} />

@@ -3,6 +3,7 @@ import { addReleaseNote, addRuntimeSpec, listReleaseNotes, listRuntimeSpecs, del
 import { getSuggestions } from '../ml';
 import Timer from '../components/Timer';
 import { makeIcsEvent } from '../storage/export';
+import StackedButton from '../components/ui/StackedButton';
 
 export default function Implementation() {
   const [label, setLabel] = useState('');
@@ -267,7 +268,7 @@ export default function Implementation() {
   return (
     <section className="grid gap-6">
       <header className="grid gap-2">
-        <h1 className="text-2xl font-bold font-humanist">Implementation</h1>
+        <h1 className="text-2xl font-bold doto-base doto-700">Implementation</h1>
         <p className="text-ink-700 text-sm">The actions you take are reflection of who you are.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
           This is where your clarified, calibrated self moves into the world. Keep in mind, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it pulls you toward the aligned choices, conversations, and small acts that belong to this version of you.
@@ -315,14 +316,14 @@ export default function Implementation() {
 
         {/* Consolidated save buttons - reduced from 4 to 2 */}
         <div className="flex gap-3 mt-4">
-          <button
-            className="px-6 py-3 bg-ink-900 text-bone-50 rounded-lg hover:bg-ink-800 font-medium"
+          <StackedButton
+            className="rect-btn--sm"
             onClick={saveSpec}
             disabled={loading}
             aria-label="Save plan"
           >
-            {loading ? 'Saving...' : 'Save'}
-          </button>
+            {loading ? 'SAVING…' : 'SAVE'}
+          </StackedButton>
           <button
             className="px-4 py-2 text-ink-600 hover:text-ink-800"
             onClick={() => {

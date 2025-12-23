@@ -63,25 +63,29 @@ function splitByPageMarkers(raw: string): Page[] {
 
 function toTitledPage(section: string): Page {
   const lines = section.split(/\r?\n/);
-  // Derive title/subtitle heuristically from first lines until a blank line
-  const nonEmpty = lines.map((l) => l.trim());
+  const trimmed = lines.map((l) => l.trim());
   let title: string | undefined;
   let subtitle: string | undefined;
   let i = 0;
-  while (i < nonEmpty.length && nonEmpty[i] === '') i++;
-  if (i < nonEmpty.length) {
-    title = nonEmpty[i];
+
+  const isImageMarkdown = (s: string) => /^!\[[^\]]*\]\([^\)]*\)/.test(s);
+
+  // Only treat the first line as a title if it's not an image
+  while (i < trimmed.length && trimmed[i] === '') i++;
+  if (i < trimmed.length && trimmed[i] && !isImageMarkdown(trimmed[i])) {
+    title = trimmed[i];
     i++;
+    while (i < trimmed.length && trimmed[i] === '') i++;
+    // Optional subtitle: short line of text (not an image)
+    if (i < trimmed.length && trimmed[i] && trimmed[i].length <= 120 && !isImageMarkdown(trimmed[i])) {
+      subtitle = trimmed[i];
+      i++;
+    }
   }
-  while (i < nonEmpty.length && nonEmpty[i] === '') i++;
-  if (i < nonEmpty.length && nonEmpty[i] && nonEmpty[i].length <= 120) {
-    subtitle = nonEmpty[i];
-    i++;
-  }
-  // Body starts at the first blank line after the first block
+
+  // Body starts at the first blank line after the first block if we had a title/subtitle
   const firstBlank = lines.findIndex((l, idx) => idx >= Math.max(0, i - 1) && l.trim() === '');
   const bodyLines = firstBlank >= 0 ? lines.slice(firstBlank + 1) : lines.slice(i);
-  // Ensure Page markers are stripped in body
   const body = bodyLines.join('\n').replace(/^\s*Page\s*\d+.*$/gim, '').trim();
   return { title, subtitle, body };
 }
@@ -128,7 +132,7 @@ export default function TextOnlyReader() {
   return (
     <div className="grid gap-4 max-w-3xl mx-auto px-3 sm:px-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold font-humanist">Timeline Jumping Guide</h1>
+        <h1 className="text-xl sm:text-2xl font-bold doto-base doto-700">Timeline Jumping Guide</h1>
         <div className="text-sm text-ink-600" aria-live="polite">
           Page {currentPage + 1} of {totalPages}
         </div>

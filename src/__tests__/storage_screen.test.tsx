@@ -11,7 +11,7 @@ describe('Storage screen', () => {
         </Routes>
       </MemoryRouter>
     );
-    expect(screen.getByRole('heading', { name: /Manage your saved guides/ })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Download a copy/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Storage/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Export storage/)).toBeInTheDocument();
   });
 });

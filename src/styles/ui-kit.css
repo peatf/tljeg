@@ -214,7 +214,7 @@
 /* Floating label input panel */
 .input-panel {
   position: relative;
-  border: 1px solid var(--color-base-4);
+  border: 1px solid var(--color-base-1);
   border-radius: 8px;
   background: rgba(50, 50, 48, 0.05);
   transition: all 0.2s ease;

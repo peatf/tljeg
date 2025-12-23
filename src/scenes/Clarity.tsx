@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { ChipList } from '../components/Chips';
 import { addEntry, addTrait, listEntries, listTraits } from '../storage/storage';
 import { getSuggestions, ingestUserText, type SuggestResult } from '../ml';
+import StackedButton from '../components/ui/StackedButton';
 
 export default function Clarity() {
   const [searchParams] = useSearchParams();
@@ -132,7 +133,7 @@ export default function Clarity() {
   return (
     <section className="grid gap-6">
       <header className="grid gap-2">
-        <h1 className="text-2xl font-bold font-humanist">Clarity{gentleMode ? ' (Gentle Mode)' : ''}</h1>
+        <h1 className="text-2xl font-bold doto-base doto-700">Clarity{gentleMode ? ' (Gentle Mode)' : ''}</h1>
         <p className="text-ink-700 text-sm">Clarity means uncovering the identity shift that calls you. This can surface from desire, tension, or even envy.</p>
         <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
           Clarity points your compass. Without it, your mind runs on yesterday's autopilot. You are listening for what wants to emerge from you, reveal itself to you from your reality's mirror. Sometimes it comes through admiration. Sometimes through tension, even jealousy. Both are signals.
@@ -328,7 +329,7 @@ export default function Clarity() {
               aria-label="Connection point input"
             />
             <div className="mt-2">
-              <button className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800" onClick={save} aria-label="Save connection">Save This</button>
+              <StackedButton className="rect-btn--sm" onClick={save} aria-label="Save connection">SAVE</StackedButton>
             </div>
           </div>
         </div>

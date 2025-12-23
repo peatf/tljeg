@@ -4,7 +4,8 @@
 
 /* Minimal typography */
 :root {
-  color-scheme: light; /* no dark mode for now */
+  color-scheme: light;
+  /* no dark mode for now */
   /* Bigger icons: scale with container width using container query units */
   --artifact-node-size: clamp(72px, 20cqw, 160px);
   --artifact-void-size: calc(var(--artifact-node-size) * 1.8);
@@ -31,23 +32,26 @@ body::before {
   /* Use a non-negative z-index; iOS Safari can fail to paint
      fixed pseudo-elements with negative stacking. */
   z-index: 0;
-  background-image: url('/assets/widescreen-bkg@300x.webp');
+  background-image: url('/assets/desktopbkg.webp');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   pointer-events: none;
-  /* Reduce background to 10% opacity per UX feedback - less visual noise */
-  opacity: 0.1;
+  /* Reduce background to 20% opacity per user feedback */
+  opacity: 0.2;
 }
 
 @media (max-width: 640px) {
   body::before {
-    background-image: url('/assets/mobile-bkg@300x.webp');
+    background-image: url('/assets/mobilebkg.webp');
   }
 }
 
 /* Ensure app content paints above the fixed background layer */
-#root { position: relative; z-index: 1; }
+#root {
+  position: relative;
+  z-index: 1;
+}
 
 .sr-only {
   position: absolute;
@@ -70,10 +74,13 @@ body::before {
 article {
   word-break: break-word;
 }
-article h1, article h2 {
+
+article h1,
+article h2 {
   margin-top: 0.75rem;
   margin-bottom: 0.25rem;
 }
+
 article p {
   margin: 0.5rem 0;
 }
@@ -112,8 +119,10 @@ article p {
 
 /* Mobile tweak: bring Clarity label a bit closer under its icon */
 @media (max-width: 640px) {
-  .artifact-node[data-id="clarity"] a span { /* label below image */
-    margin-top: 0.25rem; /* was mt-2 via class; this soft override reduces space */
+  .artifact-node[data-id="clarity"] a span {
+    /* label below image */
+    margin-top: 0.25rem;
+    /* was mt-2 via class; this soft override reduces space */
   }
 }
 
@@ -137,4 +146,54 @@ article p {
   image-rendering: crisp-edges;
   image-rendering: -moz-crisp-edges;
   image-rendering: -webkit-crisp-edges;
+}
+
+/* Variable font utilities for Doto and VT323 */
+.doto-base {
+  font-family: "Doto", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+/* Use .doto-<uniquifier> with weight number in the class name for convenience */
+.doto-100 {
+  font-weight: 100;
+}
+
+.doto-200 {
+  font-weight: 200;
+}
+
+.doto-300 {
+  font-weight: 300;
+}
+
+.doto-400 {
+  font-weight: 400;
+}
+
+.doto-500 {
+  font-weight: 500;
+}
+
+.doto-600 {
+  font-weight: 600;
+}
+
+.doto-700 {
+  font-weight: 700;
+}
+
+.doto-800 {
+  font-weight: 800;
+}
+
+.doto-900 {
+  font-weight: 900;
+}
+
+.vt323-regular {
+  font-family: "VT323", monospace;
+  font-weight: 400;
+  font-style: normal;
 }

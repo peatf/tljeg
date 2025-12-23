@@ -4,6 +4,7 @@ import SafetyIllustration from '../assets/safety.svg?react';
 import { ChipList } from '../components/Chips';
 import { addEntry } from '../storage/storage';
 import { getSuggestions } from '../ml';
+import StackedButton from '../components/ui/StackedButton';
 
 export default function Safety() {
   const [consent, setConsent] = useState('');
@@ -67,7 +68,7 @@ export default function Safety() {
   return (
     <section className="grid gap-6">
       <header className="grid gap-2">
-        <h1 className="text-2xl font-bold font-humanist">Safety</h1>
+        <h1 className="text-2xl font-bold doto-base doto-700">Safety</h1>
         <p className="text-ink-700 text-sm">Shifts only land if they feel safe. Begin by grounding in internal safety.</p>
         <div className="mx-auto" role="img" aria-label="Safety illustration" title="Safety illustration">
           <SafetyIllustration />
@@ -227,9 +228,9 @@ export default function Safety() {
             <textarea id="body-reflection" value={bodyReflection} onChange={(e) => setBodyReflection(e.target.value)} className="border p-2 rounded min-h-[80px]" aria-label="Body readiness reflection" />
           </div>
           <div className="flex gap-3">
-            <button className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800" onClick={save} disabled={loading} aria-label="Save safety note">
-              {loading ? 'Saving...' : 'Save'}
-            </button>
+            <StackedButton className="rect-btn--sm" onClick={save} disabled={loading} aria-label="Save safety note">
+              {loading ? 'SAVING…' : 'SAVE'}
+            </StackedButton>
           </div>
         </div>
       )}

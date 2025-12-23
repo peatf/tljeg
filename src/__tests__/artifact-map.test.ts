@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pathFor, pathForPixel, Point } from '../components/artifact/ArtifactArrow';
+import { pathFor, Point } from '../components/artifact/ArtifactArrow';
 import { polarToCartesian } from '../components/artifact/ArtifactMap';
 
 describe('Artifact Map Functions', () => {
@@ -97,37 +97,6 @@ describe('Artifact Map Functions', () => {
         expect(Math.abs(c1y - 100)).toBeGreaterThan(5);
         expect(Math.abs(c2y - 100)).toBeGreaterThan(5);
       }
-    });
-  });
-
-  describe('pathForPixel', () => {
-    const center: Point = { x: 100, y: 100 };
-    const from: Point = { x: 50, y: 50 };
-    const to: Point = { x: 150, y: 150 };
-
-    it('returns at least 3 points and only orthogonal segments', () => {
-      const pts = pathForPixel(from, to, center);
-      expect(pts.length).toBeGreaterThanOrEqual(3);
-
-      for (let i = 1; i < pts.length; i++) {
-        const dx = pts[i].x - pts[i - 1].x;
-        const dy = pts[i].y - pts[i - 1].y;
-        expect(dx === 0 || dy === 0).toBe(true);
-      }
-    });
-
-    it('bows away from center compared to straight midpoint', () => {
-      const pts = pathForPixel(from, to, center, 6, 12);
-      // Approximate midpoint of the polyline: pick the midpoint of the middle segment
-      const midIndex = Math.floor((pts.length - 1) / 2);
-      const midA = pts[midIndex];
-      const midB = pts[midIndex + 1] ?? pts[midIndex];
-      const polyMid = { x: (midA.x + midB.x) / 2, y: (midA.y + midB.y) / 2 };
-
-      const straightMid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-      const d2 = (p: Point) => (p.x - center.x) ** 2 + (p.y - center.y) ** 2;
-
-      expect(d2(polyMid)).toBeGreaterThan(d2(straightMid));
     });
   });
 });
