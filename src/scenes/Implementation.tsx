@@ -286,7 +286,7 @@ export default function Implementation() {
         <label htmlFor="micro1" className="text-sm">
           Do you feel any moves or actions arising that feel like a direct expression of who you've become?
           <span className="block text-xs text-ink-500 mt-1">
-            It's okay if nothing arises—let life respond to you.
+            It's okay if nothing arises, let life respond to you.
           </span>
         </label>
         <div className="input-panel">

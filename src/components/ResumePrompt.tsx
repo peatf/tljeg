@@ -71,7 +71,7 @@ export default function ResumePrompt({ onResume, onStartFresh }: ResumePromptPro
         <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
             <p className="text-purple-800 mb-3">
                 Welcome back! You practiced {timeAgo}
-                {lastPractice.label && <span className="font-medium"> — {lastPractice.label}</span>}
+                {lastPractice.label && <span className="font-medium"> - {lastPractice.label}</span>}
             </p>
             <div className="flex flex-wrap gap-3">
                 {suggestedNext && (
