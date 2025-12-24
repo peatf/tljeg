@@ -5,7 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 import { addEntry } from '../storage/storage';
 import DissolveWord from '../components/DissolveWord';
 import { useReducedMotionPref } from '../hooks/useReducedMotionPref';
-import { StackedButton } from '../components/ui';
 import InputPanel from '../components/ui/InputPanel';
 import VoidLabel from '../components/VoidLabel';
 import AnchorPreview from '../components/AnchorPreview';
@@ -248,14 +247,14 @@ export default function VOIDScene() {
               onKeyDown={(e) => e.key === 'Enter' && addLabelsFromInput()}
               ref={labelInputRef as any}
             />
-            <StackedButton
+            <button
               onClick={addLabelsFromInput}
               disabled={!labelInput.trim()}
               aria-label="Add Label"
-              className="rect-btn--sm"
+              className="btn-flow"
             >
-              ADD LABEL
-            </StackedButton>
+              Add Label
+            </button>
           </div>
 
           {labels.length > 0 && (
@@ -280,13 +279,14 @@ export default function VOIDScene() {
                 }}
               />
 
-              <StackedButton
+              <button
                 onClick={() => setState('choose_anchor')}
                 aria-label="Continue to Anchor Selection"
-                className="rect-btn--wide"
+                className="btn-flow w-full"
+                style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
               >
-                CONTINUE TO ANCHOR SELECTION
-              </StackedButton>
+                Continue to Anchor Selection
+              </button>
             </div>
           )}
         </div>
@@ -295,11 +295,18 @@ export default function VOIDScene() {
   }
 
   if (state === 'choose_anchor') {
+    const isReady = selectedAnchor && (selectedAnchor.type !== 'custom' || customAnchor.trim());
+
     return (
-      <section className="grid gap-6">
+      <section className="grid gap-6 pb-24">
         <header className="grid gap-2">
           <h1 className="text-2xl font-bold doto-base doto-700">Choose Your Anchor</h1>
-          <p className="text-ink-700 text-sm">Select something to hold your attention during the ritual. Pick your favorite meditative sound and play that as a companion if you would like. Or if you want a guided Timeline Jump, grab <a href="https://www.peathefeary.com/classesandaudios/p/timeline-jumping-audio" className="text-purple-600 hover:text-purple-800 underline" target="_blank" rel="noopener noreferrer">one here</a>.</p>
+          <p className="text-ink-700 text-sm">
+            <strong>Step 1:</strong> Tap an anchor below to select it. <strong>Step 2:</strong> Press "Begin Hold" to start.
+          </p>
+          <p className="text-ink-600 text-xs mt-1">
+            Pick your favorite meditative sound and play that as a companion if you would like. Or if you want a guided Timeline Jump, grab <a href="https://www.peathefeary.com/classesandaudios/p/timeline-jumping-audio" className="text-purple-600 hover:text-purple-800 underline" target="_blank" rel="noopener noreferrer">one here</a>.
+          </p>
         </header>
 
         <div className="grid gap-4">
@@ -333,21 +340,35 @@ export default function VOIDScene() {
               onBlur={() => selectedAnchor && setSelectedAnchor({ ...selectedAnchor, custom: customAnchor })}
             />
           )}
+        </div>
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setState('enter_labels')}
-              className="px-4 py-2 border rounded"
-            >
-              Back
-            </button>
-            <button
-              onClick={() => startHold()}
-              disabled={!selectedAnchor || (selectedAnchor.type === 'custom' && !customAnchor.trim())}
-              className="px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-50"
-            >
-              Begin Hold (90s)
-            </button>
+        {/* Sticky bottom action bar */}
+        <div className="fixed bottom-0 left-0 right-0 bg-bone-50 border-t border-stone-200 p-4 z-40 shadow-lg">
+          <div className="max-w-3xl mx-auto">
+            {!selectedAnchor && (
+              <p className="text-center text-ink-600 text-sm mb-3">Tap an anchor above to select it</p>
+            )}
+            {selectedAnchor && (
+              <p className="text-center text-ink-700 text-sm mb-3 font-medium">
+                Selected: <span className="text-purple-700">{getAnchorDisplay(selectedAnchor)}</span>
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setState('enter_labels')}
+                className="btn-quiet flex-shrink-0"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => startHold()}
+                disabled={!isReady}
+                className="btn-flow flex-1 disabled:opacity-50 py-4 text-lg font-semibold"
+                style={isReady ? { background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' } : {}}
+              >
+                {isReady ? 'Begin Hold (90s)' : 'Select an Anchor to Begin'}
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -373,25 +394,22 @@ export default function VOIDScene() {
 
   if (state === 'release') {
     return (
-      <section className="fixed inset-0 flex flex-col items-center justify-center text-center overflow-hidden z-50">
-        {/* Charcoal black multi-layer overlay */}
-        <div className="absolute inset-0 bg-[#1a1a1a]" style={{ opacity: 0.85 }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2a2a2a] to-[#0a0a0a]" style={{ opacity: 0.6 }} />
-        <div className="absolute inset-0 bg-black" style={{ opacity: 0.3 }} />
-
-        <div className="relative z-10 grid gap-6">
-          <header className="grid gap-2">
-            <h1 className="text-2xl font-bold doto-base doto-700 text-white">Release</h1>
-            <p className="text-white/70 text-sm">congratulations!</p>
+      <section className="void-immersive">
+        <div className="grid gap-8">
+          <header className="grid gap-3">
+            <h1 className="void-heading text-2xl sm:text-3xl">Release</h1>
+            <p className="void-subheading text-sm">congratulations</p>
           </header>
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 min-h-[200px]">
             {dissolvingLabels.map((label, index) => (
               <DissolveWord key={index} text={label} delay={reducedMotion ? 0 : index * 300} />
             ))}
 
             {dissolvingLabels.length === 0 && (
-              <div className="text-xl text-purple-400">welcome to your new timeline</div>
+              <div className="void-heading text-xl" style={{ color: 'var(--color-accent-organic)' }}>
+                welcome to your new timeline
+              </div>
             )}
           </div>
         </div>
@@ -401,19 +419,14 @@ export default function VOIDScene() {
 
   if (state === 'integration') {
     return (
-      <section className="fixed inset-0 flex flex-col items-center justify-center overflow-y-auto z-50 py-8">
-        {/* Charcoal black multi-layer overlay */}
-        <div className="absolute inset-0 bg-[#1a1a1a]" style={{ opacity: 0.85 }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#2a2a2a] to-[#0a0a0a]" style={{ opacity: 0.6 }} />
-        <div className="absolute inset-0 bg-black" style={{ opacity: 0.3 }} />
-
-        <div className="relative z-10 grid gap-6 max-w-2xl w-full px-4">
-          <header className="grid gap-2 text-center">
-            <h1 className="text-2xl font-bold doto-base doto-700 text-white">Integration</h1>
-            <p className="text-white/70 text-sm">Capture what emerged from the space.</p>
+      <section className="void-immersive" style={{ overflowY: 'auto', justifyContent: 'flex-start', paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
+        <div className="grid gap-8 max-w-xl w-full px-5">
+          <header className="grid gap-3 text-center">
+            <h1 className="void-heading text-2xl sm:text-3xl">Integration</h1>
+            <p className="void-subheading text-sm">Capture what emerged from the space.</p>
           </header>
 
-          <div className="grid gap-4">
+          <div className="grid gap-5">
             <LabelInsights
               labels={labels}
               showReflectionPrompts={true}
@@ -430,7 +443,7 @@ export default function VOIDScene() {
                 value={reflection}
                 onChange={(e) => setReflection((e.target as HTMLTextAreaElement).value)}
                 placeholder="Ex: chest softer, face relaxed."
-                className="bg-white/10 text-white"
+                className="void-input"
               />
             </div>
 
@@ -442,7 +455,7 @@ export default function VOIDScene() {
                 value={possibility}
                 onChange={(e) => setPossibility((e.target as HTMLTextAreaElement).value)}
                 placeholder="Ex: send the email."
-                className="bg-white/10 text-white"
+                className="void-input"
               />
             </div>
 
@@ -453,19 +466,19 @@ export default function VOIDScene() {
                 id="inspiration"
                 value={inspiration}
                 onChange={(e) => setInspiration((e.target as HTMLTextAreaElement).value)}
-                className="bg-white/10 text-white"
+                className="void-input"
                 placeholder="Ex: reach out to that collaborator."
               />
             </div>
 
             <button
               onClick={save}
-              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors"
+              className="void-btn-primary mt-2"
             >
-              Save VOID Session
+              Save Session
             </button>
 
-            {status && <p className="text-sm text-white/60" aria-live="polite">{status}</p>}
+            {status && <p className="void-subheading text-sm mt-2" aria-live="polite">{status}</p>}
           </div>
         </div>
       </section>

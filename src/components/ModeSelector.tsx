@@ -13,7 +13,8 @@ export default function ModeSelector() {
       <div className="grid sm:grid-cols-2 gap-4">
         <Link
           to="/text"
-          className="block border border-slate-300 rounded-lg p-6 focus:outline-none focus:ring-2 focus:ring-ink-600"
+          className="section-card block focus:outline-none focus:ring-2 focus:ring-offset-2"
+          style={{ '--tw-ring-color': 'var(--color-accent-organic)' } as React.CSSProperties}
           aria-label="Open Text Guide"
         >
           <h2 className="text-xl font-semibold">Text Guide</h2>
@@ -21,7 +22,8 @@ export default function ModeSelector() {
         </Link>
         <Link
           to="/artifact"
-          className="block border border-slate-300 rounded-lg p-6 focus:outline-none focus:ring-2 focus:ring-ink-600"
+          className="section-card section-card--elevated block focus:outline-none focus:ring-2 focus:ring-offset-2"
+          style={{ '--tw-ring-color': 'var(--color-accent-organic)' } as React.CSSProperties}
           aria-label="Open Digital Timeline Jump"
         >
           <h2 className="text-xl font-semibold">Digital Timeline Jump</h2>

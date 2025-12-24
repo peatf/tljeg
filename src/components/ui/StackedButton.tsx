@@ -2,12 +2,14 @@ import React from 'react';
 
 export type StackedButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   label?: string;
+  breathing?: boolean;
 };
 
 /** Rectangular stacked CTA button matching the UI kit */
-export function StackedButton({ label, children, className = '', ...props }: StackedButtonProps) {
+export function StackedButton({ label, children, className = '', breathing, ...props }: StackedButtonProps) {
+  const breathingClass = breathing ? 'stacked-button--breathing' : '';
   return (
-    <button className={`stacked-button rect-btn ${className}`} {...props}>
+    <button className={`stacked-button rect-btn ${breathingClass} ${className}`} {...props}>
       <div className="layer l1" />
       <div className="layer l2 feathered" />
       <div className="layer l3 feathered" />

@@ -1,5 +1,6 @@
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import ModeSelector from './components/ModeSelector';
 import Safety from './scenes/Safety';
 import Clarity from './scenes/Clarity';
@@ -12,6 +13,57 @@ import StorageReveal from './scenes/Storage';
 import FAQ from './scenes/FAQ';
 import FlowMap from './components/FlowMap';
 import { ArtifactMap } from './components/artifact/ArtifactMap';
+
+// Animation variants for page transitions
+export const pageVariants = {
+  initial: {
+    opacity: 0,
+    y: 8,
+    filter: 'blur(4px)'
+  },
+  enter: {
+    opacity: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: {
+      duration: 0.6,
+      ease: [0.25, 0.1, 0.25, 1],
+    }
+  },
+  exit: {
+    opacity: 0,
+    y: -4,
+    filter: 'blur(2px)',
+    transition: {
+      duration: 0.4,
+      ease: [0.25, 0.1, 0.25, 1],
+    }
+  }
+};
+
+// Stagger container variants for section reveals
+export const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.1
+    }
+  }
+};
+
+export const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.1, 0.25, 1]
+    }
+  }
+};
 
 function Header() {
   const location = useLocation();
@@ -75,24 +127,36 @@ function Header() {
 }
 
 export default function App() {
+  const location = useLocation();
+
   return (
     <div className="min-h-screen text-ink-900 overflow-x-hidden">
       <Header />
       <main className="max-w-3xl mx-auto px-3 sm:px-4 py-6">
-        <Routes>
-          <Route path="/" element={<ModeSelector />} />
-          <Route path="/text" element={<TextOnlyReader />} />
-          <Route path="/artifact" element={<section className="grid gap-3"><h1 className="text-2xl font-bold doto-base doto-700 text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
-          <Route path="/artifact/safety" element={<Safety />} />
-          <Route path="/artifact/clarity" element={<Clarity />} />
-          <Route path="/artifact/void" element={<VOIDScene />} />
-          <Route path="/artifact/calibration" element={<Calibration />} />
-          <Route path="/artifact/implementation" element={<Implementation />} />
-          <Route path="/artifact/runtime" element={<Navigate to="/artifact/implementation" replace />} />
-          <Route path="/artifact/resets" element={<Resets />} />
-          <Route path="/artifact/faq" element={<FAQ />} />
-          <Route path="/artifact/storage" element={<StorageReveal />} />
-        </Routes>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial="initial"
+            animate="enter"
+            exit="exit"
+            variants={pageVariants}
+          >
+            <Routes location={location}>
+              <Route path="/" element={<ModeSelector />} />
+              <Route path="/text" element={<TextOnlyReader />} />
+              <Route path="/artifact" element={<section className="grid gap-3"><h1 className="text-2xl font-bold doto-base doto-700 text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
+              <Route path="/artifact/safety" element={<Safety />} />
+              <Route path="/artifact/clarity" element={<Clarity />} />
+              <Route path="/artifact/void" element={<VOIDScene />} />
+              <Route path="/artifact/calibration" element={<Calibration />} />
+              <Route path="/artifact/implementation" element={<Implementation />} />
+              <Route path="/artifact/runtime" element={<Navigate to="/artifact/implementation" replace />} />
+              <Route path="/artifact/resets" element={<Resets />} />
+              <Route path="/artifact/faq" element={<FAQ />} />
+              <Route path="/artifact/storage" element={<StorageReveal />} />
+            </Routes>
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

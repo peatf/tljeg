@@ -1,6 +1,7 @@
 /* UI Kit tokens and component styles for stacked buttons and floating-label inputs */
 
 :root {
+  /* Base colors (keep existing) */
   --color-bg: #fafaf2;
   --color-bg-alt: #fafbec;
   --color-base-1: #e1e1d7;
@@ -12,9 +13,39 @@
   --color-accent-glow: rgba(0, 95, 247, 0.15);
   --color-text-primary: #323230;
   --color-text-secondary: #7c7d76;
+
+  /* Organic accent — sage green for grounding moments */
+  --color-accent-organic: #7B9E87;
+  --color-accent-organic-glow: rgba(123, 158, 135, 0.15);
+  --color-accent-organic-soft: rgba(123, 158, 135, 0.08);
+
+  /* Warm accent — soft terracotta for emphasis without alarm */
+  --color-accent-warm: #C4A484;
+  --color-accent-warm-glow: rgba(196, 164, 132, 0.15);
+
+  /* Soften the blue for focus states — less electric, more calm */
+  --color-accent-soft: #4A7FD4;
+  --color-accent-soft-glow: rgba(74, 127, 212, 0.12);
+
+  /* Cream variations for layering */
+  --color-cream-warm: #F5F3E8;
+  --color-cream-cool: #F8F9F5;
+
+  /* Subtle border for glass effects */
+  --color-border-soft: rgba(175, 175, 167, 0.3);
+  --color-border-focus: rgba(123, 158, 135, 0.4);
+
+  /* Typography */
   --font-body: Inter, ui-sans-serif, system-ui, Helvetica, Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-display: Inter, ui-sans-serif, system-ui, Helvetica, Arial, sans-serif;
+
+  /* Motion timing */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --duration-page: 600ms;
 }
 
 .font-mono {
@@ -214,34 +245,43 @@
 /* Floating label input panel */
 .input-panel {
   position: relative;
-  border: 1px solid var(--color-base-1);
-  border-radius: 8px;
-  background: rgba(50, 50, 48, 0.05);
-  transition: all 0.2s ease;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+  /* Make room for floating label that extends 10px above the container */
+  margin-top: 12px;
 }
 
 .input-panel:focus-within {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent), 0 0 10px var(--color-accent-glow);
+  border-color: var(--color-accent-organic);
+  box-shadow:
+    0 0 0 3px var(--color-accent-organic-glow),
+    0 4px 16px rgba(123, 158, 135, 0.08);
+  background: rgba(255, 255, 255, 0.6);
 }
 
 .input-panel-label {
   position: absolute;
-  top: -10px;
+  top: -12px;
   left: 12px;
-  background: var(--color-bg-alt);
-  padding: 0 6px;
+  background: var(--color-bg);
+  padding: 2px 8px;
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  transition: color 0.2s ease;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+  z-index: 1;
 }
 
 .input-panel:focus-within .input-panel-label {
-  color: var(--color-accent);
+  color: var(--color-accent-organic);
+  transform: translateY(-2px);
 }
 
 .form-element {
@@ -252,6 +292,11 @@
   color: var(--color-text-primary);
   font-size: 15px;
   line-height: 1.5;
+}
+
+/* Extra top padding when inside input-panel with floating label */
+.input-panel .form-element {
+  padding-top: 20px;
 }
 
 .form-element:focus {
@@ -321,60 +366,879 @@
   cursor: not-allowed;
 }
 
+/* Flow Buttons (In-Phase Actions) - soft pill buttons with depth */
+.btn-flow {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-cream-warm) 0%, var(--color-bg) 100%);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 44px;
+}
+
+.btn-flow:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  border-color: var(--color-border-focus);
+}
+
+.btn-flow:active {
+  transform: translateY(0);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-flow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Quiet Buttons (Secondary Actions) - text with subtle underline on hover */
+.btn-quiet {
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-weight: 450;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  min-height: 44px;
+}
+
+.btn-quiet::after {
+  content: '';
+  position: absolute;
+  bottom: 0.25rem;
+  left: 0.75rem;
+  right: 0.75rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transition: transform 0.2s ease;
+}
+
+.btn-quiet:hover {
+  color: var(--color-text-primary);
+}
+
+.btn-quiet:hover::after {
+  transform: scaleX(1);
+}
+
+.btn-quiet:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Section Card - reusable container with breathing room */
 .section-card {
-  padding: 1.5rem;
-  border: 1px solid var(--color-base-2);
-  border-radius: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.5);
+  padding: 1.75rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 16px;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.7) 0%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.02),
+    0 4px 8px rgba(0, 0, 0, 0.02),
+    0 16px 32px rgba(0, 0, 0, 0.02);
   margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow:
+    0 2px 2px rgba(0, 0, 0, 0.02),
+    0 8px 16px rgba(0, 0, 0, 0.03),
+    0 24px 48px rgba(0, 0, 0, 0.03);
 }
 
 .section-card+.section-card {
   margin-top: 0.5rem;
 }
 
+/* Elevated card — for important content blocks */
+.section-card--elevated {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.03),
+    0 12px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Inset card — for nested content, less prominent */
+.section-card--inset {
+  background: rgba(0, 0, 0, 0.02);
+  border: none;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
 /* Chip variants for different contexts */
 .chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  gap: 0.375rem;
+  padding: 0.375rem 1rem;
+  border-radius: 999px;
   font-size: 0.875rem;
-  transition: all 0.15s ease;
+  font-weight: 450;
+  transition: all 0.2s ease;
+  min-height: 44px;
 }
 
+/* Interactive — selectable items */
 .chip-interactive {
-  background-color: var(--color-base-1);
-  border: 1px solid var(--color-base-2);
+  background: var(--color-cream-warm);
+  border: 1px solid var(--color-border-soft);
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .chip-interactive:hover {
-  border-color: var(--color-base-3);
-  background-color: var(--color-base-2);
+  background: rgba(255, 255, 255, 0.7);
+  border-color: var(--color-accent-organic);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .chip-interactive[aria-pressed="true"] {
-  background-color: var(--color-accent-glow);
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  background: var(--color-accent-organic-soft);
+  border-color: var(--color-accent-organic);
+  color: var(--color-accent-organic);
+  box-shadow:
+    inset 0 1px 2px rgba(123, 158, 135, 0.1),
+    0 0 0 2px var(--color-accent-organic-glow);
 }
 
+/* Display — read-only information */
 .chip-display {
-  background-color: var(--color-base-1);
-  border: 1px solid var(--color-base-2);
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--color-border-soft);
+  color: var(--color-text-secondary);
   cursor: default;
 }
 
+/* Suggestion — offered options, dashed until hovered */
+.chip-suggestion,
 .chip-autofill {
-  background-color: transparent;
-  border: 1px dashed var(--color-base-3);
+  background: transparent;
+  border: 1px dashed var(--color-border-soft);
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 
+.chip-suggestion:hover,
 .chip-autofill:hover {
-  background-color: var(--color-base-1);
+  background: var(--color-cream-warm);
   border-style: solid;
+  border-color: var(--color-accent-warm);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 767px) {
+  .chip {
+    padding: 0.625rem 1.25rem;
+  }
+}
+
+/* ============================================
+   STEP TRACKER - Stepping stones visualization
+   ============================================ */
+.step-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 1.5rem 1rem;
+}
+
+.step-node {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-base-1);
+  border: 2px solid var(--color-base-2);
+  position: relative;
+  transition: all 0.4s ease;
+  flex-shrink: 0;
+}
+
+.step-node--active {
+  width: 16px;
+  height: 16px;
+  background: var(--color-accent-organic);
+  border-color: var(--color-accent-organic);
+  box-shadow: 0 0 0 4px var(--color-accent-organic-glow);
+}
+
+.step-node--completed {
+  background: var(--color-accent-organic);
+  border-color: var(--color-accent-organic);
+}
+
+.step-connector {
+  width: 32px;
+  height: 2px;
+  background: var(--color-base-1);
+  transition: background 0.4s ease;
+  flex-shrink: 0;
+}
+
+.step-connector--completed {
+  background: linear-gradient(90deg, var(--color-accent-organic), var(--color-accent-organic));
+}
+
+/* Alternative: Breath marks style */
+.breath-tracker {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.breath-mark {
+  width: 24px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-base-1);
+  transition: all 0.5s ease;
+}
+
+.breath-mark--current {
+  background: var(--color-accent-organic);
+  width: 32px;
+}
+
+.breath-mark--completed {
+  background: var(--color-accent-organic);
+  opacity: 0.6;
+}
+
+/* In-phase progress dots */
+.phase-progress {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.phase-progress-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-base-1);
+  transition: all 0.3s ease;
+}
+
+.phase-progress-dot--filled {
+  background: var(--color-accent-organic);
+}
+
+.phase-progress-dot--current {
+  background: var(--color-accent-warm);
+  box-shadow: 0 0 0 2px var(--color-accent-warm-glow);
+}
+
+/* ============================================
+   SAVE CONFIRMATION - Gentle inline confirmation
+   ============================================ */
+.save-confirmation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-accent-organic-soft);
+  border-radius: 999px;
+  color: var(--color-accent-organic);
+  font-size: 0.875rem;
+  animation: saveAppear 0.4s ease;
+}
+
+@keyframes saveAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.save-confirmation-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-accent-organic);
+}
+
+/* ============================================
+   SECTION DIVIDERS
+   ============================================ */
+.section-divider {
+  height: 1px;
+  margin: 3rem 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--color-border-soft) 20%,
+    var(--color-border-soft) 80%,
+    transparent 100%
+  );
+  border: none;
+}
+
+/* Centered dot pattern for ritual feel */
+.section-divider--dots {
+  height: auto;
+  background: none;
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+}
+
+.section-divider--dots::before,
+.section-divider--dots::after {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-base-2);
+}
+
+.section-divider--dots span {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-base-2);
+}
+
+/* ============================================
+   BREATH SECTIONS - Mobile-first single-focus
+   ============================================ */
+.breath-section {
+  min-height: 65vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.breath-content {
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  .breath-section {
+    min-height: auto;
+    padding: 3rem 2rem;
+  }
+
+  .breath-content {
+    max-width: 560px;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 1200px) {
+  .breath-content {
+    max-width: 640px;
+  }
+}
+
+/* ============================================
+   VOID IMMERSIVE STYLES
+   ============================================ */
+
+/* Dark immersive overlay that preserves background texture */
+.void-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Background layer - darkens while preserving texture */
+.void-immersive::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  /* Use the same background as body but darker */
+  background-image: url('/assets/desktopbkg.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  /* Darken the background significantly */
+  filter: brightness(0.15) saturate(0.7);
+}
+
+@media (max-width: 640px) {
+  .void-immersive::before {
+    background-image: url('/assets/mobilebkg.webp');
+  }
+}
+
+/* Subtle gradient overlay for depth */
+.void-immersive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse 120% 100% at 50% 40%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  pointer-events: none;
+}
+
+/* Content layer sits above overlays */
+.void-immersive > * {
+  position: relative;
+  z-index: 10;
+}
+
+.void-ambient {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(
+      ellipse 80% 50% at 20% 30%,
+      rgba(123, 158, 135, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 60% 60% at 80% 70%,
+      rgba(196, 164, 132, 0.06) 0%,
+      transparent 50%
+    );
+  animation: voidDrift 30s ease-in-out infinite alternate;
+}
+
+@keyframes voidDrift {
+  0% {
+    opacity: 0.4;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0.6;
+    transform: scale(1.05) rotate(2deg);
+  }
+}
+
+/* Input styling for dark VOID mode */
+.void-input {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+}
+
+.void-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.void-input:focus {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: var(--color-accent-organic) !important;
+}
+
+/* Override input-panel label in void context */
+.void-immersive .input-panel-label {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.void-immersive .input-panel {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.void-immersive .input-panel:focus-within {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-accent-organic);
+  box-shadow: 0 0 0 3px rgba(123, 158, 135, 0.2);
+}
+
+.void-immersive .form-element {
+  color: white;
+}
+
+.void-immersive .form-element::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============================================
+   VOID INTERIOR ELEMENTS
+   ============================================ */
+
+/* Refined timer display */
+.void-timer {
+  font-family: "Doto", var(--font-mono);
+  font-weight: 200;
+  letter-spacing: 0.15em;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 0 40px rgba(123, 158, 135, 0.3);
+}
+
+.void-timer--pulse {
+  animation: timerPulse 1.5s ease;
+}
+
+@keyframes timerPulse {
+  0%, 100% {
+    opacity: 0.85;
+    text-shadow: 0 0 40px rgba(123, 158, 135, 0.3);
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 60px rgba(123, 158, 135, 0.5);
+  }
+}
+
+/* Void heading typography */
+.void-heading {
+  font-family: "Doto", var(--font-display);
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.void-subheading {
+  font-family: var(--font-body);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Anchor label in void */
+.void-anchor-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--color-accent-organic);
+  opacity: 0.9;
+}
+
+/* Breath phase indicator */
+.void-breath-phase {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0.25em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Refined void buttons */
+.void-btn {
+  padding: 0.875rem 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 450;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 48px;
+}
+
+.void-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.void-btn:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Primary void action button */
+.void-btn-primary {
+  padding: 1rem 2.5rem;
+  border: 1px solid var(--color-accent-organic);
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    rgba(123, 158, 135, 0.25) 0%,
+    rgba(123, 158, 135, 0.15) 100%
+  );
+  backdrop-filter: blur(8px);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow:
+    0 0 30px rgba(123, 158, 135, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.void-btn-primary:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(123, 158, 135, 0.35) 0%,
+    rgba(123, 158, 135, 0.25) 100%
+  );
+  box-shadow:
+    0 0 50px rgba(123, 158, 135, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Subtle/quiet void button */
+.void-btn-quiet {
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.void-btn-quiet:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Keyboard hint text */
+.void-hint {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.void-hint kbd {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  margin: 0 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-family: inherit;
+}
+
+/* Paused state indicator */
+.void-paused {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--color-accent-warm);
+  opacity: 0.9;
+}
+
+/* Anchor visualization containers */
+.void-anchor-viz {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+/* Breathing circle */
+.void-breath-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid rgba(123, 158, 135, 0.4);
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(123, 158, 135, 0.15) 0%,
+    rgba(123, 158, 135, 0.05) 50%,
+    transparent 70%
+  );
+  box-shadow:
+    0 0 60px rgba(123, 158, 135, 0.15),
+    inset 0 0 40px rgba(123, 158, 135, 0.05);
+}
+
+/* Count dots */
+.void-count-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(123, 158, 135, 0.4);
+  background: rgba(123, 158, 135, 0.1);
+  transition: all 0.2s ease;
+}
+
+.void-count-dot--active {
+  background: var(--color-accent-organic);
+  border-color: var(--color-accent-organic);
+  box-shadow: 0 0 20px rgba(123, 158, 135, 0.4);
+  transform: scale(1.4);
+}
+
+/* Stillness square */
+.void-stillness {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed rgba(123, 158, 135, 0.3);
+  background: rgba(123, 158, 135, 0.03);
+  transition: all 3s ease;
+}
+
+.void-stillness--active {
+  background: rgba(123, 158, 135, 0.06);
+  border-color: rgba(123, 158, 135, 0.4);
+}
+
+/* Label dissolution enhancement */
+.dissolve-word {
+  transition:
+    opacity 8s ease-in-out,
+    filter 8s ease-in-out,
+    transform 8s ease-in-out,
+    letter-spacing 8s ease-in-out;
+}
+
+.dissolve-word--phase-2 {
+  letter-spacing: 0.05em;
+  transform: scale(1.02);
+}
+
+.dissolve-word--phase-3 {
+  letter-spacing: 0.15em;
+  filter: blur(8px);
+  opacity: 0;
+  transform: scale(1.05) translateY(-4px);
+}
+
+/* ============================================
+   MOBILE ACTIONS BAR
+   ============================================ */
+.mobile-actions {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem 1.5rem;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(250, 250, 242, 0.9) 20%,
+    rgba(250, 250, 242, 0.98) 100%
+  );
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-border-soft);
+  display: flex;
+  gap: 1rem;
+  z-index: 50;
+}
+
+/* ============================================
+   SCROLL INDICATORS
+   ============================================ */
+.scroll-fade-bottom {
+  position: relative;
+}
+
+.scroll-fade-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    var(--color-bg) 100%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.scroll-fade-bottom--active::after {
+  opacity: 1;
+}
+
+/* ============================================
+   STACKED BUTTON BREATHING ANIMATION
+   ============================================ */
+@keyframes subtleBreathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.005);
+  }
+}
+
+.stacked-button--breathing {
+  animation: subtleBreathe 6s ease-in-out infinite;
+}
+
+.stacked-button--breathing:hover {
+  animation: none;
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .void-ambient,
+  .stacked-button--breathing,
+  .void-timer--pulse,
+  .dissolve-word {
+    animation: none;
+  }
+
+  .save-confirmation {
+    animation: none;
+  }
+
+  .step-node,
+  .step-connector,
+  .breath-mark,
+  .phase-progress-dot,
+  .chip,
+  .section-card,
+  .btn-flow,
+  .input-panel {
+    transition: none;
+  }
 }

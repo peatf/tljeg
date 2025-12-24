@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
 import { addContext, listContexts, deleteContext, listEntries } from '../storage/storage';
 import { ingestUserText } from '../ml';
-import StackedButton from '../components/ui/StackedButton';
 
 // Evocative context options for rehearsal
 const REHEARSAL_CONTEXTS = [
@@ -170,7 +169,7 @@ export default function Grounding() {
   return (
     <section className="grid gap-6">
       {preloadedOverlap && (
-        <div className="p-3 border rounded bg-bone-50 text-sm text-ink-800" aria-live="polite">
+        <div className="section-card text-sm text-ink-800" aria-live="polite">
           From Clarity: "{preloadedOverlap}"
         </div>
       )}
@@ -180,7 +179,7 @@ export default function Grounding() {
           <span className="text-sm text-ink-500">{sectionsComplete} of 3 complete</span>
         </div>
         <p className="text-ink-700 text-sm">Making clarity real in everyday life. Proof keeps the shift believable.</p>
-        <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
+        <div className="section-card text-sm text-ink-700">
           Clarity without evidence is fragile. Grounding is how you anchor it into everyday life. Rather than dramatic grand gestures, you calibrate to new ways of being through tiny signals: the way you answer an email, how you move in your kitchen, the choices you make mid-commute.
         </div>
       </header>
@@ -193,16 +192,19 @@ export default function Grounding() {
             <div key={o.id} className="grid gap-2 p-3 rounded border bg-white">
               <p className="text-sm text-ink-700">Earlier you noticed: "{o.text}"</p>
               <p className="text-sm">Where else are you already being this way?</p>
-              <textarea
-                value={overlapExpansions[o.id] ?? ''}
-                onChange={(e) => setOverlapExpansions((prev) => ({ ...prev, [o.id]: e.target.value }))}
-                className="border p-2 rounded min-h-[60px]"
-                placeholder="Name one ordinary place this already shows up..."
-                aria-label="Connection expansion input"
-              />
+              <div className="input-panel">
+                <textarea
+                  value={overlapExpansions[o.id] ?? ''}
+                  onChange={(e) => setOverlapExpansions((prev) => ({ ...prev, [o.id]: e.target.value }))}
+                  className="form-element min-h-[60px]"
+                  placeholder="Name one ordinary place this already shows up..."
+                  aria-label="Connection expansion input"
+                />
+              </div>
               <p className="text-sm">How does this connection prove that this identity is already alive in you?</p>
               <button
-                className="px-3 py-1.5 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 justify-self-start"
+                className="btn-flow justify-self-start"
+                style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
                 onClick={async () => {
                   const text = overlapExpansions[o.id]?.trim();
                   if (!text) return;
@@ -236,22 +238,25 @@ export default function Grounding() {
             <p className="text-sm text-ink-600">Capture one small way you already lived this trait today.</p>
           )}
         </div>
-        <textarea
-          ref={proofTextareaRef}
-          value={proof}
-          onChange={(e) => setProof(e.target.value)}
-          className={`border p-3 rounded min-h-[80px] ${focusProof ? 'border-purple-500 ring-2 ring-purple-200' : ''}`}
-          placeholder="Ex: I calmly answered an email while tired."
-          aria-label="Proof input"
-        />
-        <StackedButton
-          className="rect-btn--sm"
+        <div className="input-panel">
+          <textarea
+            ref={proofTextareaRef}
+            value={proof}
+            onChange={(e) => setProof(e.target.value)}
+            className={`form-element min-h-[80px] ${focusProof ? 'border-purple-500 ring-2 ring-purple-200' : ''}`}
+            placeholder="Ex: I calmly answered an email while tired."
+            aria-label="Proof input"
+          />
+        </div>
+        <button
+          className="btn-flow disabled:opacity-50"
           onClick={saveProof}
           disabled={!proof.trim()}
           aria-label="Save proof"
+          style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
         >
-          SAVE PROOF
-        </StackedButton>
+          Save Proof
+        </button>
         {proofEntries.length > 0 && (
           <div className="mt-2">
             <h3 className="text-sm text-ink-600 mb-2">Saved Proofs</h3>
@@ -292,10 +297,7 @@ export default function Grounding() {
             return (
               <button
                 key={ctx}
-                className={`px-3 py-2 rounded-full border text-sm transition-colors ${active
-                  ? 'bg-purple-50 border-purple-300 text-purple-800'
-                  : 'border-slate-300 hover:border-slate-400'
-                  }`}
+                className={active ? 'chip chip-interactive' : 'chip chip-suggestion'}
                 onClick={() => setRehearsalContext(active ? '' : ctx)}
                 disabled={!hasProof}
                 aria-pressed={active}
@@ -306,10 +308,7 @@ export default function Grounding() {
             );
           })}
           <button
-            className={`px-3 py-2 rounded-full border text-sm transition-colors ${rehearsalContext === 'custom'
-              ? 'bg-purple-50 border-purple-300 text-purple-800'
-              : 'border-slate-300 hover:border-slate-400'
-              }`}
+            className={rehearsalContext === 'custom' ? 'chip chip-interactive' : 'chip chip-suggestion'}
             onClick={() => setRehearsalContext(rehearsalContext === 'custom' ? '' : 'custom')}
             disabled={!hasProof}
             aria-pressed={rehearsalContext === 'custom'}
@@ -319,19 +318,22 @@ export default function Grounding() {
         </div>
 
         {rehearsalContext === 'custom' && (
-          <input
-            type="text"
-            placeholder="Describe your moment..."
-            value={customContext}
-            className="border p-3 rounded"
-            onChange={(e) => setCustomContext(e.target.value)}
-            aria-label="Custom context input"
-          />
+          <div className="input-panel">
+            <input
+              type="text"
+              placeholder="Describe your moment..."
+              value={customContext}
+              className="form-element"
+              onChange={(e) => setCustomContext(e.target.value)}
+              aria-label="Custom context input"
+            />
+          </div>
         )}
 
         <div className="flex gap-2 flex-wrap">
           <button
-            className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2"
+            className="btn-flow inline-flex items-center gap-2"
+            style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
             onClick={() => setRehearse(true)}
             disabled={!hasProof || !selectedContext.trim()}
             aria-label="Start 60 second rehearsal"
@@ -340,7 +342,7 @@ export default function Grounding() {
           </button>
           {rehearsalComplete && (
             <button
-              className="px-4 py-2 border border-ink-900 text-ink-900 rounded hover:bg-bone-50"
+              className="btn-quiet"
               onClick={saveRehearsal}
               disabled={!hasProof || !selectedContext.trim()}
               aria-label="Save rehearsal"
@@ -395,23 +397,26 @@ export default function Grounding() {
             Do you feel drawn toward a choice or action that also brings up some tension? This edge is where growth lives. You don't have to force anything - just notice if something is calling you forward.
           </p>
         </div>
-        <input
-          type="text"
-          value={stretch}
-          onChange={(e) => setStretch(e.target.value)}
-          className="border p-3 rounded"
-          placeholder="Ex: I feel pulled to pay my assistant more. It's a stretch, but it feels aligned."
-          disabled={!hasProof}
-          aria-label="Stretch input"
-        />
-        <StackedButton
-          className="rect-btn--sm"
+        <div className="input-panel">
+          <input
+            type="text"
+            value={stretch}
+            onChange={(e) => setStretch(e.target.value)}
+            className="form-element"
+            placeholder="Ex: I feel pulled to pay my assistant more. It's a stretch, but it feels aligned."
+            disabled={!hasProof}
+            aria-label="Stretch input"
+          />
+        </div>
+        <button
+          className="btn-flow disabled:opacity-50"
           onClick={saveStretch}
           disabled={!hasProof || !stretch.trim()}
           aria-label="Save stretch"
+          style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
         >
-          SAVE THIS EDGE
-        </StackedButton>
+          Save This Edge
+        </button>
         {stretchEntries.length > 0 && (
           <div className="mt-2">
             <h3 className="text-sm text-ink-600 mb-2">Saved Edges</h3>

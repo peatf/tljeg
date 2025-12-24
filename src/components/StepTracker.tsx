@@ -31,36 +31,30 @@ export default function StepTracker({ current }: Props) {
   }, []);
 
   return (
-    <nav aria-label="Progress" className="flex items-center gap-2 overflow-x-auto py-1">
+    <nav aria-label="Progress" className="step-tracker">
       {coreIds.map((id, idx) => {
         const node = getNodeById(id)!;
-        const short: Record<string, string> = {
-          safety: 'Safety',
-          clarity: 'Clarity',
-          calibration: 'Calib.',
-          void: 'VOID',
-          implementation: 'Impl.'
-        };
         const isActive = id === current;
         const isDone = !!complete[id];
+
         return (
-          <a
-            key={id}
-            href={node.to}
-            className={`inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border text-xs whitespace-nowrap transition-colors ${
-              isActive
-                ? 'border-ink-800 bg-ink-800 text-white'
-                : isDone
-                ? 'border-green-300 bg-green-50 text-green-800'
-                : 'border-slate-300 text-ink-700 hover:bg-bone-50'
-            }`}
-            aria-current={isActive ? 'step' : undefined}
-            aria-label={`${node.label} ${isActive ? 'current' : isDone ? 'complete' : 'pending'}`}
-          >
-            <span className={`inline-block w-2 h-2 rounded-full ${isDone ? 'bg-green-500' : isActive ? 'bg-white' : 'bg-slate-300'}`} />
-            <span className="font-medium">{short[id] ?? node.label}</span>
-            <span className="opacity-60">{idx + 1}</span>
-          </a>
+          <>
+            <a
+              key={id}
+              href={node.to}
+              className={`step-node ${isActive ? 'step-node--active' : isDone ? 'step-node--completed' : ''}`}
+              aria-current={isActive ? 'step' : undefined}
+              aria-label={`${node.label} ${isActive ? 'current' : isDone ? 'complete' : 'pending'}`}
+              title={node.label}
+            />
+            {idx < coreIds.length - 1 && (
+              <div
+                key={`connector-${id}`}
+                className={`step-connector ${isDone ? 'step-connector--completed' : ''}`}
+                aria-hidden="true"
+              />
+            )}
+          </>
         );
       })}
     </nav>

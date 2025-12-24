@@ -10,18 +10,21 @@ interface AnchorPreviewProps {
   customValue?: string;
 }
 
-export default function AnchorPreview({ 
-  type, 
-  isSelected, 
-  onClick, 
-  label, 
+export default function AnchorPreview({
+  type,
+  isSelected,
+  onClick,
+  label,
   description,
-  customValue 
+  customValue
 }: AnchorPreviewProps) {
   const reducedMotion = useReducedMotionPref();
-  const [previewActive, setPreviewActive] = useState(false);
+  const [hoverActive, setHoverActive] = useState(false);
   const [breathPhase, setBreathPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
   const [countNumber, setCountNumber] = useState(1);
+
+  // Preview is active when hovered OR when selected (for mobile/touch)
+  const previewActive = hoverActive || isSelected;
 
   useEffect(() => {
     if (!previewActive || reducedMotion) return;
@@ -83,80 +86,102 @@ export default function AnchorPreview({
     if (type === 'breath_2_2_4' || type === 'breath_steady_4') {
       return (
         <div className="flex flex-col items-center gap-2">
-          <div 
-            className="border-2 border-stone-300 rounded-full bg-stone-50"
-            style={getBreathCircleStyle()}
+          <div
+            className="rounded-full"
+            style={{
+              ...getBreathCircleStyle(),
+              background: 'linear-gradient(135deg, var(--color-accent-organic-glow) 0%, var(--color-accent-organic) 100%)',
+              border: '2px solid var(--color-accent-organic)',
+              boxShadow: previewActive ? '0 0 20px var(--color-accent-organic-glow)' : 'none'
+            }}
           />
           {previewActive && !reducedMotion && (
-            <div className="text-xs text-stone-600 font-mono tracking-wider">
-              {breathPhase === 'inhale' ? 'inhale' : 
-               breathPhase === 'hold' ? 'hold' : 'exhale'}
+            <div className="text-xs font-mono tracking-wider" style={{ color: 'var(--color-accent-organic)' }}>
+              {breathPhase === 'inhale' ? 'inhale' :
+                breathPhase === 'hold' ? 'hold' : 'exhale'}
             </div>
           )}
         </div>
       );
     }
-    
+
     if (type === 'count_1234') {
       return (
         <div className="flex gap-2">
           {[1, 2, 3, 4].map(num => (
-            <div 
+            <div
               key={num}
-              className={`w-3 h-3 border border-stone-300 transition-all duration-200 ${
-                previewActive && !reducedMotion && countNumber === num 
-                  ? 'bg-stone-700 scale-125' 
-                  : 'bg-stone-100'
-              }`}
+              className="w-3 h-3 rounded-sm transition-all duration-200"
+              style={{
+                background: previewActive && !reducedMotion && countNumber === num
+                  ? 'var(--color-accent-organic)'
+                  : 'var(--color-accent-organic-glow)',
+                border: '1px solid var(--color-accent-organic)',
+                transform: previewActive && !reducedMotion && countNumber === num ? 'scale(1.3)' : 'scale(1)',
+                boxShadow: previewActive && !reducedMotion && countNumber === num
+                  ? '0 0 8px var(--color-accent-organic-glow)'
+                  : 'none'
+              }}
             />
           ))}
         </div>
       );
     }
-    
+
     if (type === 'stillness') {
       return (
-        <div className={`w-16 h-16 border-2 border-dashed border-stone-300 transition-all duration-2000 ${
-          previewActive ? 'bg-stone-50 opacity-60' : 'bg-transparent opacity-20'
-        }`} />
+        <div
+          className="w-14 h-14 rounded-sm transition-all duration-1000"
+          style={{
+            border: '2px dashed var(--color-accent-organic)',
+            background: previewActive ? 'var(--color-accent-organic-soft)' : 'transparent',
+            opacity: previewActive ? 0.8 : 0.4
+          }}
+        />
       );
     }
-    
+
     return (
-      <div className="w-16 h-4 bg-gray-200 rounded-full" />
+      <div
+        className="w-14 h-3 rounded-full"
+        style={{ background: 'var(--color-accent-warm-glow)', border: '1px solid var(--color-accent-warm)' }}
+      />
     );
   };
 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setPreviewActive(true)}
-      onMouseLeave={() => setPreviewActive(false)}
-      className={`
-        p-6 border rounded-sm text-left transition-all duration-300 ease-out
-        hover:shadow-md hover:-translate-y-1
-        ${isSelected ? 'border-stone-400 bg-stone-50 shadow-sm' : 'border-stone-200 hover:border-stone-300 hover:bg-stone-25'}
-      `}
+      onMouseEnter={() => setHoverActive(true)}
+      onMouseLeave={() => setHoverActive(false)}
+      className="section-card text-left transition-all duration-300 ease-out"
+      style={{
+        padding: '1.25rem 1.5rem',
+        borderColor: isSelected ? 'var(--color-accent-organic)' : undefined,
+        boxShadow: isSelected
+          ? '0 0 0 2px var(--color-accent-organic-glow), 0 4px 16px rgba(123, 158, 135, 0.12)'
+          : undefined,
+        transform: hoverActive && !isSelected ? 'translateY(-2px)' : undefined
+      }}
     >
-      <div className="flex items-center justify-between mb-3">
-        <div>
-          <div className="font-medium text-lg text-stone-800">{label}</div>
-          <div className="text-sm text-stone-600">{description}</div>
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="font-medium text-base" style={{ color: 'var(--color-text-primary)' }}>{label}</div>
+          <div className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{description}</div>
+          {previewActive && !reducedMotion && (
+            <div className="text-xs mt-2 font-mono tracking-wide" style={{ color: 'var(--color-accent-organic)', opacity: 0.8 }}>
+              {type === 'breath_2_2_4' && '2s inhale · 2s hold · 4s exhale'}
+              {type === 'breath_steady_4' && 'steady 4-count breathing'}
+              {type === 'count_1234' && 'counting 1 · 2 · 3 · 4'}
+              {type === 'stillness' && 'pure awareness, no technique'}
+              {type === 'custom' && `${customValue || 'enter your anchor'}`}
+            </div>
+          )}
         </div>
-        <div className="ml-4">
+        <div className="ml-4 flex-shrink-0">
           {renderPreview()}
         </div>
       </div>
-      
-      {previewActive && !reducedMotion && (
-        <div className="text-xs text-stone-500 mt-2 opacity-75 font-mono tracking-wide">
-          {type === 'breath_2_2_4' && '2s inhale, 2s hold, 4s exhale'}
-          {type === 'breath_steady_4' && 'steady 4-count breathing'}
-          {type === 'count_1234' && 'counting 1-2-3-4 pattern'}
-          {type === 'stillness' && 'pure awareness, no technique'}
-          {type === 'custom' && `${customValue || 'enter your anchor'}`}
-        </div>
-      )}
     </button>
   );
 }

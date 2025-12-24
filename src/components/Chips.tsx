@@ -25,7 +25,7 @@ export function ChipList({ chips, onSelect }: { chips: Chip[]; onSelect?: (c: Ch
           <button
             key={c.id}
             onClick={() => onSelect?.(c)}
-            className="px-3 py-2 min-h-[44px] rounded-full border border-slate-300 text-sm"
+            className="chip chip-suggestion"
             aria-label={`Suggestion ${c.text}${sourceLabel ? ` (${sourceLabel})` : ''}${methodLabel ? ` [${methodLabel}]` : ''}`}
             title={isAnchor ? "Anchor = the first trait or identity shift you want to ground in." : undefined}
           >

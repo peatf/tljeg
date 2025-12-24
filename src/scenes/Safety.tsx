@@ -4,7 +4,6 @@ import SafetyIllustration from '../assets/safety.svg?react';
 import { ChipList } from '../components/Chips';
 import { addEntry } from '../storage/storage';
 import { getSuggestions } from '../ml';
-import StackedButton from '../components/ui/StackedButton';
 
 export default function Safety() {
   const [consent, setConsent] = useState('');
@@ -73,7 +72,7 @@ export default function Safety() {
         <div className="mx-auto" role="img" aria-label="Safety illustration" title="Safety illustration">
           <SafetyIllustration />
         </div>
-        <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
+        <div className="section-card text-sm text-ink-700">
           Change only roots when your system feels safe enough to let it land. If you try to push transformation from a body still vibrating with stress, it's like planting seeds in pebbles: nothing takes. This stage is where you check your environment, name what you need, and give yourself permission to open.
         </div>
       </header>
@@ -89,10 +88,7 @@ export default function Safety() {
             return (
               <button
                 key={e}
-                className={`px-3 py-1 rounded-full border text-sm transition-colors ${active
-                  ? 'bg-green-50 border-green-300 text-green-800'
-                  : 'border-slate-300 hover:border-slate-400'
-                  }`}
+                className={`chip ${active ? 'chip-interactive' : 'chip-suggestion'}`}
                 onClick={() => {
                   setEnv((cur) => (cur.includes(e) ? cur.filter((x) => x !== e) : [...cur, e]));
                 }}
@@ -105,14 +101,16 @@ export default function Safety() {
           })}
         </div>
         <div className="flex gap-2 items-center mt-2">
-          <input
-            type="text"
-            value={customEnv}
-            onChange={(e) => setCustomEnv(e.target.value)}
-            placeholder="Add your own..."
-            className="border border-slate-300 rounded p-2 flex-1"
-            aria-label="Add custom comfort item"
-          />
+          <div className="input-panel flex-1">
+            <input
+              type="text"
+              value={customEnv}
+              onChange={(e) => setCustomEnv(e.target.value)}
+              placeholder="Add your own..."
+              className="form-element"
+              aria-label="Add custom comfort item"
+            />
+          </div>
           <button
             onClick={() => {
               if (customEnv.trim()) {
@@ -121,7 +119,7 @@ export default function Safety() {
               }
             }}
             disabled={!customEnv.trim()}
-            className="px-3 py-2 border border-slate-300 rounded disabled:opacity-50"
+            className="btn-flow"
             aria-label="Add custom item"
           >
             Add
@@ -195,7 +193,7 @@ export default function Safety() {
         <div className="grid gap-3">
           <p className="text-sm text-ink-600">Close your eyes and notice how your body feels right now.</p>
           <button
-            className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2"
+            className="btn-flow inline-flex items-center gap-2"
             onClick={() => setScanStarted(true)}
             aria-label="Start 30 second scan"
           >
@@ -228,9 +226,9 @@ export default function Safety() {
             <textarea id="body-reflection" value={bodyReflection} onChange={(e) => setBodyReflection(e.target.value)} className="border p-2 rounded min-h-[80px]" aria-label="Body readiness reflection" />
           </div>
           <div className="flex gap-3">
-            <StackedButton className="rect-btn--sm" onClick={save} disabled={loading} aria-label="Save safety note">
-              {loading ? 'SAVING…' : 'SAVE'}
-            </StackedButton>
+            <button className="btn-flow disabled:opacity-50" onClick={save} disabled={loading} aria-label="Save safety note" style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}>
+              {loading ? 'Saving…' : 'Save'}
+            </button>
           </div>
         </div>
       )}
@@ -242,10 +240,10 @@ export default function Safety() {
       <div className="mt-6 pt-4 border-t border-slate-200">
         <p className="text-sm text-ink-600 mb-3">Ready to continue?</p>
         <div className="flex flex-wrap gap-3">
-          <a href="/artifact/clarity" className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2">
+          <a href="/artifact/clarity" className="btn-flow inline-flex items-center gap-2" style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}>
             Continue to Clarity <span aria-hidden>→</span>
           </a>
-          <a href="/artifact/void" className="px-4 py-2 border rounded hover:bg-bone-50">
+          <a href="/artifact/void" className="btn-quiet inline-flex items-center">
             Drop into VOID first
           </a>
         </div>

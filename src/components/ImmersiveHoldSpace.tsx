@@ -31,6 +31,7 @@ export default function ImmersiveHoldSpace({
   const [countNumber, setCountNumber] = useState(1);
   const [labelDissolvePhase, setLabelDissolvePhase] = useState(0);
   const [ambientOpacity, setAmbientOpacity] = useState(0.3);
+  const [timerPulse, setTimerPulse] = useState(false);
 
   const getAnchorDisplay = (anchor: ImmersiveHoldSpaceProps['anchor']): string => {
     switch (anchor.type) {
@@ -87,6 +88,17 @@ export default function ImmersiveHoldSpace({
     }
   }, [actualHoldTime, holdSeconds, reducedMotion, labelDissolvePhase]);
 
+  // Timer pulse when minute changes
+  useEffect(() => {
+    if (reducedMotion || isPaused) return;
+
+    if (actualHoldTime > 0 && actualHoldTime % 60 === 0) {
+      setTimerPulse(true);
+      const timeout = setTimeout(() => setTimerPulse(false), 1000);
+      return () => clearTimeout(timeout);
+    }
+  }, [actualHoldTime, reducedMotion, isPaused]);
+
   const getBreathHaloStyle = () => {
     if (reducedMotion || anchor.type === 'stillness') return {};
 
@@ -114,66 +126,50 @@ export default function ImmersiveHoldSpace({
   const renderAnchorVisualization = () => {
     if (anchor.type === 'breath_2_2_4' || anchor.type === 'breath_steady_4') {
       return (
-        <div className="relative flex items-center justify-center">
+        <div className="relative flex flex-col items-center justify-center gap-6">
           <div
-            className="absolute w-32 h-32 rounded-full border-2 border-white border-opacity-30 bg-white bg-opacity-10 backdrop-blur-sm"
+            className="void-breath-circle"
             style={getBreathHaloStyle()}
           />
-          <div className="relative z-10 text-white text-lg font-mono tracking-widest opacity-80">
-            {!reducedMotion && (
-              <div className="text-center">
-                <div>{breathPhase === 'inhale' ? 'inhale' :
-                  breathPhase === 'hold' ? 'hold' : 'exhale'}</div>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    if (anchor.type === 'count_1234') {
-      return (
-        <div className="flex items-center gap-4">
-          {[1, 2, 3, 4].map(num => (
-            <div
-              key={num}
-              className={`w-6 h-6 border-2 border-white transition-all duration-200 ${!reducedMotion && countNumber === num
-                ? 'bg-white scale-150 shadow-lg'
-                : 'bg-white bg-opacity-20 opacity-50'
-                }`}
-            />
-          ))}
           {!reducedMotion && (
-            <div className="ml-4 text-white text-2xl font-mono tracking-widest opacity-80">
-              {countNumber}
+            <div className="void-breath-phase">
+              {breathPhase}
             </div>
           )}
         </div>
       );
     }
 
+    if (anchor.type === 'count_1234') {
+      return (
+        <div className="flex items-center gap-5">
+          {[1, 2, 3, 4].map(num => (
+            <div
+              key={num}
+              className={`void-count-dot ${!reducedMotion && countNumber === num ? 'void-count-dot--active' : ''}`}
+            />
+          ))}
+        </div>
+      );
+    }
+
     if (anchor.type === 'stillness') {
       return (
-        <div className={`w-24 h-24 border-2 border-dashed border-white border-opacity-30 transition-all duration-3000 ${!reducedMotion ? 'bg-white bg-opacity-5 opacity-60' : 'bg-white bg-opacity-10 opacity-30'
-          }`} />
+        <div className={`void-stillness ${!reducedMotion ? 'void-stillness--active' : ''}`} />
       );
     }
 
     return (
-      <div className="text-white text-lg">
+      <div className="void-subheading text-lg">
         {anchor.custom}
       </div>
     );
   };
 
   return (
-    <section
-      className="fixed inset-0 flex flex-col items-center justify-center text-center overflow-hidden z-50"
-    >
-      {/* Charcoal black multi-layer overlay */}
-      <div className="absolute inset-0 bg-[#1a1a1a]" style={{ opacity: Math.min(0.9, 0.78 + ambientOpacity * 0.08) }} />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#2a2a2a] to-[#0a0a0a]" style={{ opacity: Math.min(0.75, 0.55 + ambientOpacity * 0.05) }} />
-      <div className="absolute inset-0 bg-black" style={{ opacity: Math.min(0.35, 0.18 + ambientOpacity * 0.1) }} />
+    <section className="void-immersive">
+      {/* Void ambient background - subtle organic gradient overlay */}
+      {!reducedMotion && <div className="void-ambient" />}
 
       {/* Floating labels that appear and dissolve */}
       {labelDissolvePhase > 0 && labels.length > 0 && (
@@ -199,50 +195,51 @@ export default function ImmersiveHoldSpace({
       )}
 
       {/* Main content */}
-      <div className="relative z-10 grid gap-8">
-        <div className="grid gap-4">
-          <h1 className="text-3xl font-bold text-white opacity-90">let yourself empty</h1>
-          <div className="text-lg text-white opacity-75">
-            Anchor: {getAnchorDisplay(anchor)}
+      <div className="grid gap-10">
+        {/* Header */}
+        <div className="grid gap-3">
+          <h1 className="void-heading text-2xl sm:text-3xl">let yourself empty</h1>
+          <div className="void-anchor-label">
+            {getAnchorDisplay(anchor)}
           </div>
         </div>
 
         {/* Anchor visualization */}
-        <div className="flex justify-center py-8">
+        <div className="void-anchor-viz">
           {renderAnchorVisualization()}
         </div>
 
         {/* Timer */}
-        <div className="text-6xl font-mono text-white">
+        <div className={`text-5xl sm:text-6xl void-timer ${timerPulse ? 'void-timer--pulse' : ''}`}>
           {Math.floor(actualHoldTime / 60)}:{(actualHoldTime % 60).toString().padStart(2, '0')}
         </div>
 
-        {isPaused && <div className="text-yellow-400 text-xl">PAUSED</div>}
+        {isPaused && <div className="void-paused">paused</div>}
 
         {/* Controls */}
-        <div className="flex justify-center gap-4 mt-8">
+        <div className="flex justify-center gap-3 mt-4">
           <button
             onClick={onTogglePause}
-            className="px-6 py-3 bg-white bg-opacity-20 text-white rounded-lg hover:bg-opacity-30 transition-all"
+            className="void-btn"
           >
             {isPaused ? 'Resume' : 'Pause'}
           </button>
           <button
             onClick={() => confirm('End VOID session early?') && onEndEarly()}
-            className="px-6 py-3 bg-red-500 bg-opacity-30 text-white rounded-lg hover:bg-opacity-50 transition-all"
+            className="void-btn-quiet"
           >
             End Early
           </button>
         </div>
 
-        <div className="text-sm text-white opacity-60 mt-4">
-          Space to pause/resume • Esc to end early
+        <div className="void-hint mt-2">
+          <kbd>Space</kbd> pause/resume <span className="mx-2">·</span> <kbd>Esc</kbd> end early
         </div>
 
         {actualHoldTime >= holdSeconds && (
           <button
             onClick={onComplete}
-            className="px-8 py-4 bg-purple-600 bg-opacity-80 text-white rounded-lg text-xl hover:bg-opacity-100 transition-all animate-pulse"
+            className="void-btn-primary mt-4"
           >
             Complete Hold
           </button>

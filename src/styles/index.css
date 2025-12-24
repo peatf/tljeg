@@ -197,3 +197,17 @@ article p {
   font-weight: 400;
   font-style: normal;
 }
+
+/* ============================================
+   SCROLL BEHAVIOR FOR PHASE SECTIONS
+   ============================================ */
+@media (max-width: 767px) {
+  .phase-container {
+    scroll-snap-type: y proximity;
+  }
+
+  .breath-section {
+    scroll-snap-align: start;
+    scroll-snap-stop: normal;
+  }
+}

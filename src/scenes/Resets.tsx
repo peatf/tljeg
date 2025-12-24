@@ -39,7 +39,7 @@ export default function Resets() {
       <header className="grid gap-2">
         <h1 className="text-2xl font-bold font-humanist">Resets</h1>
         <p className="text-ink-700 text-sm">When things feel off, Resets bring you back gently.</p>
-        <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
+        <div className="section-card text-sm text-ink-700">
           Some days you'll drift. That's part of the rhythm. Resets don't erase progress; they re-align you with what's alive now. If something feels too far, shrink the step. If your system feels heavy, drop into VOID. If you're unsure, hold onto one small piece of proof and let it carry you forward.
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>

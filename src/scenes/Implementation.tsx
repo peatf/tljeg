@@ -3,7 +3,6 @@ import { addReleaseNote, addRuntimeSpec, listReleaseNotes, listRuntimeSpecs, del
 import { getSuggestions } from '../ml';
 import Timer from '../components/Timer';
 import { makeIcsEvent } from '../storage/export';
-import StackedButton from '../components/ui/StackedButton';
 
 export default function Implementation() {
   const [label, setLabel] = useState('');
@@ -270,26 +269,32 @@ export default function Implementation() {
       <header className="grid gap-2">
         <h1 className="text-2xl font-bold doto-base doto-700">Implementation</h1>
         <p className="text-ink-700 text-sm">The actions you take are reflection of who you are.</p>
-        <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
+        <div className="section-card text-sm text-ink-700">
           This is where your clarified, calibrated self moves into the world. Keep in mind, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it pulls you toward the aligned choices, conversations, and small acts that belong to this version of you.
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>
       </header>
       <div className="grid gap-2">
         <label htmlFor="label" className="text-sm">Title your next 24 hours</label>
-        <input id="label" value={label} onChange={(e) => setLabel(e.target.value)} className="border p-2 rounded" aria-label="Plan title" />
+        <div className="input-panel">
+          <input id="label" value={label} onChange={(e) => setLabel(e.target.value)} className="form-element" aria-label="Plan title" />
+        </div>
         <label htmlFor="principle" className="text-sm">What is one thing that feels new and fresh in you today?</label>
-        <input id="principle" value={principle} onChange={(e) => setPrinciple(e.target.value)} className="border p-2 rounded" aria-label="Principle" />
+        <div className="input-panel">
+          <input id="principle" value={principle} onChange={(e) => setPrinciple(e.target.value)} className="form-element" aria-label="Principle" />
+        </div>
         <label htmlFor="micro1" className="text-sm">
           Do you feel any moves or actions arising that feel like a direct expression of who you've become?
           <span className="block text-xs text-ink-500 mt-1">
             It's okay if nothing arises—let life respond to you.
           </span>
         </label>
-        <input id="micro1" value={micro1} onChange={(e) => setMicro1(e.target.value)} className="border p-2 rounded" placeholder="Optional: one small act..." aria-label="Small act" />
+        <div className="input-panel">
+          <input id="micro1" value={micro1} onChange={(e) => setMicro1(e.target.value)} className="form-element" placeholder="Optional: one small act..." aria-label="Small act" />
+        </div>
         <div className="flex flex-wrap gap-2 mt-1" role="group" aria-label="Suggestions">
           {microActChips.map((c) => (
-            <button key={c.id} className="px-3 py-1 rounded-full border text-sm hover:bg-bone-50" onClick={() => setMicro1(c.text)} aria-label={`Suggestion: ${c.text}`}>
+            <button key={c.id} className="chip chip-suggestion" onClick={() => setMicro1(c.text)} aria-label={`Suggestion: ${c.text}`}>
               {c.text} {c.from === 'void' && <span className="text-purple-500">(from VOID)</span>}
             </button>
           ))}
@@ -301,14 +306,16 @@ export default function Implementation() {
         <p className="text-xs text-ink-600 mb-1" id="friction-help">
           Name one thing you can reduce tomorrow to help your new way of being take root.
         </p>
-        <input id="fric" value={friction} onChange={(e) => setFriction(e.target.value)} className="border p-2 rounded" placeholder="Optional: one obstacle to reduce..." aria-label="Obstacle" aria-describedby="friction-help" />
+        <div className="input-panel">
+          <input id="fric" value={friction} onChange={(e) => setFriction(e.target.value)} className="form-element" placeholder="Optional: one obstacle to reduce..." aria-label="Obstacle" aria-describedby="friction-help" />
+        </div>
         {chipsLoading && <div className="text-sm text-ink-600 italic">Loading suggestions...</div>}
         {frictionChips.some(c => c.from === 'safety' || c.from === 'calibration') && (
           <p className="text-xs text-ink-500 mt-2 mb-1">From earlier, you mentioned these obstacles:</p>
         )}
         <div className="flex flex-wrap gap-2">
           {frictionChips.map((c) => (
-            <button key={c.id} className={`px-3 py-1 rounded-full border text-sm hover:bg-bone-50 ${c.from === 'safety' ? 'border-amber-400 bg-amber-50' : c.from === 'calibration' ? 'border-blue-300 bg-blue-50' : ''}`} onClick={() => setFriction(c.text)} aria-label={`Obstacle: ${c.text}${c.from ? ` (from ${c.from})` : ''}`}>
+            <button key={c.id} className={`chip chip-suggestion ${c.from === 'safety' ? 'border-amber-400 bg-amber-50' : c.from === 'calibration' ? 'border-blue-300 bg-blue-50' : ''}`} onClick={() => setFriction(c.text)} aria-label={`Obstacle: ${c.text}${c.from ? ` (from ${c.from})` : ''}`}>
               {c.text}
             </button>
           ))}
@@ -316,16 +323,17 @@ export default function Implementation() {
 
         {/* Consolidated save buttons - reduced from 4 to 2 */}
         <div className="flex gap-3 mt-4">
-          <StackedButton
-            className="rect-btn--sm"
+          <button
+            className="btn-flow disabled:opacity-50"
             onClick={saveSpec}
             disabled={loading}
             aria-label="Save plan"
+            style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
           >
-            {loading ? 'SAVING…' : 'SAVE'}
-          </StackedButton>
+            {loading ? 'Saving…' : 'Save'}
+          </button>
           <button
-            className="px-4 py-2 text-ink-600 hover:text-ink-800"
+            className="btn-quiet"
             onClick={() => {
               setLabel('');
               setPrinciple('');
@@ -342,8 +350,8 @@ export default function Implementation() {
         {status === 'Saved plan.' && (
           <div className="flex gap-2 mt-3 p-3 bg-green-50 rounded-lg">
             <span className="text-sm text-green-700">✓ Saved!</span>
-            <button className="px-3 py-1 border rounded text-sm hover:bg-white" onClick={saveToCalendar}>Add to Calendar</button>
-            <button className="px-3 py-1 border rounded text-sm hover:bg-white" onClick={addReminder}>Set reminder</button>
+            <button className="btn-quiet" onClick={saveToCalendar}>Add to Calendar</button>
+            <button className="btn-quiet" onClick={addReminder}>Set reminder</button>
           </div>
         )}
       </div>
@@ -372,7 +380,7 @@ export default function Implementation() {
                 {/* IMP-3 repeat button */}
                 <div className="mt-2">
                   <button
-                    className="text-xs px-2 py-1 border rounded"
+                    className="btn-quiet text-xs"
                     onClick={async () => {
                       const id = await addRuntimeSpec({ label: s.label, principle: s.principle, microActs: s.microActs || [], friction: s.friction });
                       const next = await listRuntimeSpecs();
@@ -406,7 +414,7 @@ export default function Implementation() {
                     <input type="checkbox" checked={isActDoneToday(act)} onChange={() => toggleAct(act)} aria-label={`Complete ${act}`} />
                     {act}
                   </label>
-                  <button className="px-4 py-2 bg-ink-900 text-bone-50 rounded hover:bg-ink-800 inline-flex items-center gap-2" onClick={() => setActTimers((t) => ({ ...t, [act]: true }))} aria-label={`Start timer for ${act}`}><span aria-hidden>▶</span> Start 60s</button>
+                  <button className="btn-flow inline-flex items-center gap-2" style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }} onClick={() => setActTimers((t) => ({ ...t, [act]: true }))} aria-label={`Start timer for ${act}`}><span aria-hidden>▶</span> Start 60s</button>
                   {actTimers[act] && (
                     <Timer seconds={60} label={`${act} timer`} onDone={() => setActTimers((t) => ({ ...t, [act]: false }))} />
                   )}
@@ -415,8 +423,10 @@ export default function Implementation() {
             </div>
           ) : null}
           <div className="flex gap-2">
-            <input value={newAct} onChange={(e) => setNewAct(e.target.value)} placeholder="Add micro-act" className="border p-2 rounded flex-1" aria-label="New micro act" />
-            <button className="px-3 py-2 border rounded" onClick={async () => {
+            <div className="input-panel flex-1">
+              <input value={newAct} onChange={(e) => setNewAct(e.target.value)} placeholder="Add micro-act" className="form-element" aria-label="New micro act" />
+            </div>
+            <button className="btn-quiet" onClick={async () => {
               if (!selectedSpecId || !newAct) return;
               const nextActs = [...(selectedSpec.microActs || []), newAct];
               await updateRuntimeSpecMicroActs(selectedSpecId, nextActs);
@@ -425,8 +435,10 @@ export default function Implementation() {
             }} aria-label="Add micro act">Add</button>
           </div>
           <div className="flex gap-2">
-            <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Logged action" className="border p-2 rounded flex-1" aria-label="Release note input" />
-            <button className="px-4 py-2 border rounded" onClick={addNote} aria-label="Add release note">Add</button>
+            <div className="input-panel flex-1">
+              <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Logged action" className="form-element" aria-label="Release note input" />
+            </div>
+            <button className="btn-quiet" onClick={addNote} aria-label="Add release note">Add</button>
           </div>
           <ul className="list-disc pl-6">
             {(todayOnly ? notesToday : notes).map((n) => (
