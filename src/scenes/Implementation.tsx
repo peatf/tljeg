@@ -304,7 +304,7 @@ export default function Implementation() {
         </div>
         <label htmlFor="fric" className="text-sm font-medium">What's in the Way?</label>
         <p className="text-xs text-ink-600 mb-1" id="friction-help">
-          Name one thing you can reduce tomorrow to help your new way of being take root.
+          Name one thing you can allow yourself to do less of tomorrow to help your new way of being take root.
         </p>
         <div className="input-panel">
           <input id="fric" value={friction} onChange={(e) => setFriction(e.target.value)} className="form-element" placeholder="Optional: one obstacle to reduce..." aria-label="Obstacle" aria-describedby="friction-help" />

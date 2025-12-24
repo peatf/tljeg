@@ -13,6 +13,7 @@ import StorageReveal from './scenes/Storage';
 import FAQ from './scenes/FAQ';
 import FlowMap from './components/FlowMap';
 import { ArtifactMap } from './components/artifact/ArtifactMap';
+import FlowProgressNav, { FlowProgressNavCompact } from './components/FlowProgressNav';
 
 // Animation variants for page transitions
 export const pageVariants = {
@@ -69,57 +70,70 @@ function Header() {
   const location = useLocation();
   const isArtifact = location.pathname.startsWith('/artifact');
   const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <header className="px-3 sm:px-4 py-3 border-b border-slate-300 bg-bone-50 sticky top-0 z-10">
-      <nav className="flex items-center gap-3 text-ink-800">
-        <Link className="font-bold" to="/">TGJ</Link>
-        <span className="hidden sm:inline text-slate-500">|</span>
-        <div className="hidden sm:flex items-center gap-3">
-          <Link to="/text" aria-label="Text Guide">Text Guide</Link>
-          <Link to="/artifact" aria-label="Digital TLJ Home">Digital TLJ</Link>
+    <header className="border-b border-slate-300 bg-bone-50 sticky top-0 z-10">
+      {/* Main nav row */}
+      <div className="px-3 sm:px-4 py-2 flex items-center gap-3 text-ink-800">
+        <Link className="font-bold text-sm" to="/">TJG</Link>
+        <span className="text-slate-300">|</span>
+        <div className="flex items-center gap-2 text-sm">
+          <Link to="/text" className="text-ink-600 hover:text-ink-900 transition-colors" aria-label="Text Guide">Text</Link>
+          <Link to="/artifact" className="text-ink-600 hover:text-ink-900 transition-colors" aria-label="Digital TLJ Home">Flow</Link>
         </div>
+
+        {/* Desktop: Flow progress nav */}
+        {isArtifact && (
+          <div className="hidden sm:flex items-center ml-auto">
+            <FlowProgressNav />
+            <span className="mx-2 text-slate-300">|</span>
+            <div className="flex items-center gap-2 text-xs text-ink-500">
+              <Link to="/artifact/resets" className="hover:text-ink-700 transition-colors">Resets</Link>
+              <Link to="/artifact/faq" className="hover:text-ink-700 transition-colors">FAQ</Link>
+              <Link to="/artifact/storage" className="hover:text-ink-700 transition-colors">Storage</Link>
+            </div>
+          </div>
+        )}
+
+        {/* Mobile menu toggle */}
         <button
-          className="ml-auto sm:hidden px-3 py-2 border rounded min-h-[44px]"
+          className="ml-auto sm:hidden px-2 py-1.5 text-xs border border-slate-300 rounded min-h-[36px]"
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
           aria-label="Toggle menu"
         >
-          Menu
+          {menuOpen ? 'Close' : 'Menu'}
         </button>
-        <div className="ml-auto hidden sm:flex items-center gap-3 text-sm">
-          {isArtifact && (
-            <>
-              <Link to="/artifact/safety">Safety</Link>
-              <Link to="/artifact/clarity">Clarity</Link>
-              <Link to="/artifact/void">VOID</Link>
-              <Link to="/artifact/calibration">Grounding</Link>
-              <Link to="/artifact/implementation">Implementation</Link>
-              <Link to="/artifact/resets">Resets</Link>
-              <Link to="/artifact/faq">FAQ</Link>
-              <Link to="/artifact/storage">Storage</Link>
-            </>
-          )}
+      </div>
+
+      {/* Mobile: Flow progress indicator (always visible when in artifact) */}
+      {isArtifact && !menuOpen && (
+        <div className="sm:hidden border-t border-slate-200 bg-bone-50">
+          <FlowProgressNavCompact />
         </div>
-      </nav>
-      {/* Mobile menu */}
+      )}
+
+      {/* Mobile menu expanded */}
       {menuOpen && (
-        <div className="sm:hidden mt-2 grid gap-2 border-t border-slate-200 pt-2 text-ink-800">
-          <div className="flex items-center gap-3">
-            <Link to="/text" onClick={() => setMenuOpen(false)} aria-label="Text Guide (mobile)">Text Guide</Link>
-            <Link to="/artifact" onClick={() => setMenuOpen(false)} aria-label="Digital TLJ Home (mobile)">Digital TLJ</Link>
-          </div>
-          {isArtifact && (
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <Link to="/artifact/safety" onClick={() => setMenuOpen(false)}>Safety</Link>
-              <Link to="/artifact/clarity" onClick={() => setMenuOpen(false)}>Clarity</Link>
-              <Link to="/artifact/void" onClick={() => setMenuOpen(false)}>VOID</Link>
-              <Link to="/artifact/calibration" onClick={() => setMenuOpen(false)}>Grounding</Link>
-              <Link to="/artifact/implementation" onClick={() => setMenuOpen(false)}>Implementation</Link>
-              <Link to="/artifact/resets" onClick={() => setMenuOpen(false)}>Resets</Link>
-              <Link to="/artifact/faq" onClick={() => setMenuOpen(false)}>FAQ</Link>
-              <Link to="/artifact/storage" onClick={() => setMenuOpen(false)}>Storage</Link>
+        <div className="sm:hidden border-t border-slate-200 bg-bone-50 p-3">
+          <div className="grid gap-3">
+            <div className="flex items-center gap-4 text-sm">
+              <Link to="/text" onClick={() => setMenuOpen(false)} className="text-ink-700">Text Guide</Link>
+              <Link to="/artifact" onClick={() => setMenuOpen(false)} className="text-ink-700">Flow Map</Link>
             </div>
-          )}
+            {isArtifact && (
+              <>
+                <div className="border-t border-slate-100 pt-3">
+                  <FlowProgressNavCompact onNavigate={() => setMenuOpen(false)} />
+                </div>
+                <div className="flex items-center justify-center gap-4 text-xs text-ink-500 pt-2 border-t border-slate-100">
+                  <Link to="/artifact/resets" onClick={() => setMenuOpen(false)}>Resets</Link>
+                  <Link to="/artifact/faq" onClick={() => setMenuOpen(false)}>FAQ</Link>
+                  <Link to="/artifact/storage" onClick={() => setMenuOpen(false)}>Storage</Link>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </header>

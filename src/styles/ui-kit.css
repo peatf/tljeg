@@ -1124,6 +1124,158 @@
   border-color: rgba(123, 158, 135, 0.4);
 }
 
+/* ============================================
+   FLOW PROGRESS NAV
+   ============================================ */
+
+.flow-progress-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.flow-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.flow-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.5rem;
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 450;
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+  border-radius: 999px;
+}
+
+.flow-nav-link:hover {
+  color: var(--color-text-primary);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.flow-nav-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-base-2);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.flow-nav-label {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .flow-nav-label {
+    display: inline;
+  }
+}
+
+/* Current step */
+.flow-nav-link--current {
+  color: var(--color-text-primary);
+  font-weight: 550;
+}
+
+.flow-nav-link--current .flow-nav-dot {
+  background: var(--color-accent-organic);
+  box-shadow: 0 0 0 3px var(--color-accent-organic-glow);
+  transform: scale(1.3);
+}
+
+/* Completed steps */
+.flow-nav-link--completed {
+  color: var(--color-accent-organic);
+}
+
+.flow-nav-link--completed .flow-nav-dot {
+  background: var(--color-accent-organic);
+}
+
+/* Upcoming steps */
+.flow-nav-link--upcoming {
+  color: var(--color-base-2);
+}
+
+.flow-nav-link--upcoming .flow-nav-dot {
+  background: var(--color-base-1);
+  border: 1px solid var(--color-base-2);
+}
+
+/* Arrows between steps */
+.flow-nav-arrow {
+  width: 14px;
+  height: 8px;
+  color: var(--color-base-2);
+  margin: 0 0.125rem;
+  flex-shrink: 0;
+}
+
+.flow-nav-arrow--completed {
+  color: var(--color-accent-organic);
+}
+
+/* ============================================
+   FLOW PROGRESS NAV - COMPACT (Mobile)
+   ============================================ */
+
+.flow-progress-nav-compact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+.flow-nav-dots-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.flow-nav-dot-link {
+  display: block;
+  padding: 0.5rem;
+  margin: -0.5rem;
+}
+
+.flow-nav-dot-mobile {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-base-1);
+  border: 2px solid var(--color-base-2);
+  transition: all 0.2s ease;
+}
+
+.flow-nav-dot-link--completed .flow-nav-dot-mobile {
+  background: var(--color-accent-organic);
+  border-color: var(--color-accent-organic);
+}
+
+.flow-nav-dot-link--current .flow-nav-dot-mobile {
+  background: var(--color-accent-organic);
+  border-color: var(--color-accent-organic);
+  box-shadow: 0 0 0 3px var(--color-accent-organic-glow);
+  transform: scale(1.2);
+}
+
+.flow-nav-current-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent-organic);
+}
+
 /* Label dissolution enhancement */
 .dissolve-word {
   transition:

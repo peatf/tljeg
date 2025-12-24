@@ -142,6 +142,24 @@ export function ArtifactNode({
           transition-shadow duration-300
           ${isHighlighted && !node.isVoid ? 'ring-2 ring-ink-400 ring-offset-2 shadow-md' : 'group-hover:shadow-md'}
         `}>
+          {/* Safety node "Start here" breathing indicator */}
+          {node.id === 'safety' && motionPrefs.shouldAnimate('glow') && (
+            <motion.div
+              className="absolute -inset-2 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, rgba(123, 158, 135, 0.4) 0%, rgba(123, 158, 135, 0) 70%)',
+              }}
+              animate={{
+                scale: [1, 1.3, 1],
+                opacity: [0.6, 1, 0.6],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          )}
           {node.isVoid && useVoidGlow && motionPrefs.shouldAnimate('glow') && (
             <motion.div
               className="absolute inset-0 rounded-full bg-ink-600/10"
@@ -173,6 +191,22 @@ export function ArtifactNode({
           }`}>
           {node.label}
         </span>
+        {/* "Start here" hint for Safety node */}
+        {node.id === 'safety' && (
+          <motion.span
+            className="text-[10px] md:text-xs text-[#7B9E87] font-medium mt-1"
+            animate={motionPrefs.shouldAnimate('opacity') ? {
+              opacity: [0.5, 1, 0.5],
+            } : {}}
+            transition={{
+              duration: 3,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+          >
+            Start here
+          </motion.span>
+        )}
       </Link>
     </motion.div>
   );
