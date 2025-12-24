@@ -25,7 +25,6 @@
     "workbox-window": "^7.3.0"
   },
   "devDependencies": {
-    "@rollup/rollup-darwin-arm64": "^4.46.3",
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-interactions": "^8.6.14",
     "@storybook/addon-links": "^8.6.14",
