@@ -83,13 +83,21 @@ export function ArtifactMap({ className = '' }: ArtifactMapProps) {
 
   return (
     <div className={`flow-map ${className}`}>
-      <p className="scene-explainer text-center mx-auto">
-        This is your process map. Start with Safety, flow step by step, and return to VOID anytime you want to reset.
-      </p>
-
-      <div className="map-jump">
-        <p className="kicker">One sitting · about ten minutes</p>
-        <Link to="/jump" className="btn-flow btn-flow--primary">Begin a Timeline Jump</Link>
+      {/* Two ways in: the guided jump, or the pages themselves */}
+      <div className="map-ways">
+        <div className="map-way">
+          <p className="kicker">Shorter</p>
+          <Link to="/jump" className="btn-flow btn-flow--primary">Begin a Timeline Jump</Link>
+          <p className="map-way__text">About 10 minutes. One step at a time, from Safety to an inspired action.</p>
+        </div>
+        <p className="map-ways__or" aria-hidden>or</p>
+        <div className="map-way">
+          <p className="kicker">Longer</p>
+          <p className="map-way__title">Work through the pages</p>
+          <p className="map-way__text">
+            This is your process map. Start with Safety, flow step by step, and return to VOID anytime you want to reset.
+          </p>
+        </div>
       </div>
 
       {/* Wide screens: the loop beside a preview of the step under your hand */}
