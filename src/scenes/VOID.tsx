@@ -3,8 +3,7 @@ import { useRef, useState, useEffect } from 'react';
 // Fallback raster for wide support
 import { Link, useSearchParams } from 'react-router-dom';
 import { addEntry } from '../storage/storage';
-import DissolveWord from '../components/DissolveWord';
-import { useReducedMotionPref } from '../hooks/useReducedMotionPref';
+import LetterDrift from '../components/LetterDrift';
 import InputPanel from '../components/ui/InputPanel';
 import VoidLabel from '../components/VoidLabel';
 import AnchorPreview from '../components/AnchorPreview';
@@ -14,6 +13,11 @@ import { ScenePlate } from '../components/ScenePlate';
 import voidImage from '../assets/VOID_1.webp';
 
 type VoidState = 'enter_labels' | 'choose_anchor' | 'hold' | 'release' | 'integration';
+
+// When the release letters have drifted apart, and when they have dissolved (see LetterDrift).
+const RELEASE_APART_AT = 34;
+const RELEASE_GONE_AT = 84;
+const LABEL_STAGGER = 1.5;
 
 type AnchorType = {
   type: 'breath_2_2_4' | 'breath_steady_4' | 'count_1234' | 'stillness' | 'custom';
@@ -32,7 +36,6 @@ interface VoidSession {
 }
 
 export default function VOIDScene() {
-  const reducedMotion = useReducedMotionPref();
   const [searchParams] = useSearchParams();
   const autostart = searchParams.get('autostart') === 'true';
   const [state, setState] = useState<VoidState>('enter_labels');
@@ -48,7 +51,7 @@ export default function VOIDScene() {
   const [reflection, setReflection] = useState('');
   const [possibility, setPossibility] = useState('');
   const [inspiration, setInspiration] = useState('');
-  const [dissolvingLabels, setDissolvingLabels] = useState<string[]>([]);
+  const [releaseElapsed, setReleaseElapsed] = useState(0);
   const [status, setStatus] = useState('');
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -116,23 +119,25 @@ export default function VOIDScene() {
     }
     setIsHolding(false);
     setIsPaused(false);
+    setReleaseElapsed(0);
     setState('release');
-
-    // Start dissolve animation
-    setDissolvingLabels([...labels]);
-
-    // Stagger the dissolve animation
-    labels.forEach((_, index) => {
-      setTimeout(() => {
-        setDissolvingLabels(prev => prev.slice(1));
-      }, index * 300);
-    });
-
-    // Move to integration after all labels have dissolved (90s total dissolve + 1s buffer)
-    setTimeout(() => {
-      setState('integration');
-    }, labels.length * 300 + 90000 + 1000);
   }
+
+  // Release: the labels drift apart into letters and dissolve (see LetterDrift), then the
+  // scene moves on to Integration by itself. Continue is there the whole time.
+  useEffect(() => {
+    if (state !== 'release') return;
+    const started = Date.now();
+    const id = window.setInterval(() => setReleaseElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, [state]);
+
+  const releaseGoneAt = labels.length ? RELEASE_GONE_AT + (labels.length - 1) * LABEL_STAGGER : 0;
+  const releaseGone = releaseElapsed >= releaseGoneAt;
+
+  useEffect(() => {
+    if (state === 'release' && releaseElapsed >= releaseGoneAt + 6) setState('integration');
+  }, [state, releaseElapsed, releaseGoneAt]);
 
   // Deep link: autostart (RST-2)
   useEffect(() => {
@@ -405,17 +410,33 @@ export default function VOIDScene() {
             <p className="void-subheading text-sm">congratulations</p>
           </header>
 
-          <div className="grid gap-4 min-h-[200px]">
-            {dissolvingLabels.map((label, index) => (
-              <DissolveWord key={index} text={label} delay={reducedMotion ? 0 : index * 300} />
-            ))}
+          <div className="grid gap-6 min-h-[200px] place-items-center">
+            {!releaseGone && (
+              <>
+                <div className="jump-hold__labels">
+                  {labels.map((label, index) => (
+                    <LetterDrift key={`${label}-${index}`} text={label} delay={index * LABEL_STAGGER} />
+                  ))}
+                </div>
+                <p className="void-subheading" aria-live="polite">
+                  {releaseElapsed < RELEASE_APART_AT ? 'Let each word become just letters.' : 'Let the letters dissolve.'}
+                </p>
+              </>
+            )}
 
-            {dissolvingLabels.length === 0 && (
+            {releaseGone && (
               <div className="void-heading text-xl" style={{ color: 'var(--void-accent)' }}>
                 welcome to your new timeline
               </div>
             )}
           </div>
+
+          <button
+            onClick={() => setState('integration')}
+            className={releaseGone ? 'void-btn-primary justify-self-center' : 'void-btn-quiet justify-self-center'}
+          >
+            Continue
+          </button>
         </div>
       </section>
     );
