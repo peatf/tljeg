@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useReducedMotionPref } from '../hooks/useReducedMotionPref';
 import VoidLabel from './VoidLabel';
 
@@ -32,6 +32,23 @@ export default function ImmersiveHoldSpace({
   const [labelDissolvePhase, setLabelDissolvePhase] = useState(0);
   const [ambientOpacity, setAmbientOpacity] = useState(0.3);
   const [timerPulse, setTimerPulse] = useState(false);
+  const [askingToEnd, setAskingToEnd] = useState(false);
+  const keepHoldingRef = useRef<HTMLButtonElement | null>(null);
+
+  // Escape asks whether to end; a second Escape keeps holding.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      setAskingToEnd((v) => !v);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
+    if (askingToEnd) keepHoldingRef.current?.focus();
+  }, [askingToEnd]);
 
   const getAnchorDisplay = (anchor: ImmersiveHoldSpaceProps['anchor']): string => {
     switch (anchor.type) {
@@ -216,21 +233,35 @@ export default function ImmersiveHoldSpace({
 
         {isPaused && <div className="void-paused">paused</div>}
 
-        {/* Controls */}
-        <div className="flex justify-center gap-3 mt-4">
-          <button
-            onClick={onTogglePause}
-            className="void-btn"
-          >
-            {isPaused ? 'Resume' : 'Pause'}
-          </button>
-          <button
-            onClick={() => confirm('End VOID session early?') && onEndEarly()}
-            className="void-btn-quiet"
-          >
-            End Early
-          </button>
-        </div>
+        {/* Controls: ending early asks here in the page, never in a pop-up */}
+        {askingToEnd ? (
+          <div className="void-ask" role="group" aria-labelledby="void-ask-title">
+            <p id="void-ask-title" className="void-subheading">End VOID session early?</p>
+            <div className="flex justify-center gap-3">
+              <button ref={keepHoldingRef} onClick={() => setAskingToEnd(false)} className="void-btn">
+                Keep holding
+              </button>
+              <button onClick={onEndEarly} className="void-btn-quiet">
+                End now
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center gap-3 mt-4">
+            <button
+              onClick={onTogglePause}
+              className="void-btn"
+            >
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
+            <button
+              onClick={() => setAskingToEnd(true)}
+              className="void-btn-quiet"
+            >
+              End Early
+            </button>
+          </div>
+        )}
 
         <div className="void-hint mt-2">
           <kbd>Space</kbd> pause/resume <span className="mx-2">·</span> <kbd>Esc</kbd> end early

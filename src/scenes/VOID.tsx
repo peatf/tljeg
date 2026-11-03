@@ -152,14 +152,10 @@ export default function VOIDScene() {
   // Effect for keyboard controls
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Escape is handled by the hold space, which asks in the page before ending.
       if (e.code === 'Space' && state === 'hold') {
         e.preventDefault();
         togglePause();
-      } else if (e.code === 'Escape' && state === 'hold') {
-        e.preventDefault();
-        if (confirm('End VOID session early?')) {
-          endHold();
-        }
       }
     };
 
