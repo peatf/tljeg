@@ -21,6 +21,9 @@ export default function Implementation() {
   const [actTimers, setActTimers] = useState<Record<string, boolean>>({});
   const [status, setStatus] = useState('');
   const [reminders, setReminders] = useState<any[]>([]);
+  const [justSaved, setJustSaved] = useState(false);
+  const [choosingReminder, setChoosingReminder] = useState(false);
+  const [dueReminder, setDueReminder] = useState<{ id: string; text: string } | null>(null);
   const [specNotes, setSpecNotes] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(false);
   const [chipsLoading, setChipsLoading] = useState(false);
@@ -126,13 +129,9 @@ export default function Implementation() {
     })();
   }, []);
 
-  // Real notification system (IMP-1)
+  // Reminders (IMP-1): a system notification when allowed, otherwise a notice on this page.
+  // Permission is only asked for when someone sets a reminder.
   useEffect(() => {
-    // Request notification permission on load
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-
     try {
       const raw = localStorage.getItem('tja-reminders');
       setReminders(raw ? JSON.parse(raw) : []);
@@ -145,7 +144,6 @@ export default function Implementation() {
         const now = Date.now();
         const due = arr.find((r) => !r.done && r.dueAt && r.dueAt <= now);
         if (due) {
-          // Try Web Notifications API first, fallback to alert
           if ('Notification' in window && Notification.permission === 'granted') {
             new Notification(`TGJ Reminder`, {
               body: due.text,
@@ -154,8 +152,7 @@ export default function Implementation() {
               requireInteraction: false
             });
           } else {
-            // Fallback to in-app alert
-            alert(`Reminder: ${due.text}`);
+            setDueReminder({ id: due.id, text: due.text });
           }
           due.done = true;
           localStorage.setItem('tja-reminders', JSON.stringify(arr));
@@ -186,8 +183,8 @@ export default function Implementation() {
       const next = await listRuntimeSpecs();
       setSpecs(next);
       setSelectedSpecId(id);
-      setStatus('Saved plan.');
-      setTimeout(() => setStatus(''), 1500);
+      setJustSaved(true);
+      setChoosingReminder(false);
     } finally {
       setLoading(false);
     }
@@ -216,35 +213,22 @@ export default function Implementation() {
     URL.revokeObjectURL(url);
   }
 
-  function saveQuickNote() {
-    if (!selectedSpecId) return;
-    const t = prompt('Quick note to save to this plan?');
-    if (!t) return;
-    addReleaseNote(selectedSpecId, t).then(() => listReleaseNotes(selectedSpecId).then(setNotes));
-  }
-
-  function addReminder() {
-    // Check notification permission
+  async function addReminder(mins: number, whenLabel: string) {
+    setChoosingReminder(false);
     if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          setStatus('Notifications enabled. Setting reminder...');
-        } else {
-          setStatus('Notifications blocked. Will use in-app alerts.');
-        }
-      });
+      await Notification.requestPermission();
     }
 
     const base = selectedSpec?.label || label || 'Follow up';
-    const mins = parseInt(prompt('Remind me in how many minutes? (default 120)') || '120', 10);
-    const when = Date.now() + (isNaN(mins) ? 120 : mins) * 60000;
-    const next = [...reminders, { id: crypto.randomUUID(), text: base, dueAt: when, done: false, createdAt: Date.now() }];
-    localStorage.setItem('tja-reminders', JSON.stringify(next));
+    const next = [...reminders, { id: crypto.randomUUID(), text: base, dueAt: Date.now() + mins * 60000, done: false, createdAt: Date.now() }];
+    try {
+      localStorage.setItem('tja-reminders', JSON.stringify(next));
+    } catch { }
     setReminders(next);
 
     const hasNotifications = 'Notification' in window && Notification.permission === 'granted';
-    setStatus(`Reminder set${hasNotifications ? ' (notifications enabled)' : ' (browser alerts)'}. Will remind in ${isNaN(mins) ? 120 : mins} minutes.`);
-    setTimeout(() => setStatus(''), 3000);
+    setStatus(`Reminder set for ${whenLabel}${hasNotifications ? '.' : ', shown on this page while it is open.'}`);
+    setTimeout(() => setStatus(''), 4000);
   }
 
   const selectedSpec = useMemo(() => specs.find((s) => s.id === selectedSpecId), [specs, selectedSpecId]);
@@ -279,6 +263,13 @@ export default function Implementation() {
         This is where your clarified, calibrated self moves into the world. Keep in mind, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it pulls you toward the aligned choices, conversations, and small acts that belong to this version of you.
         {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
       </ScenePlate>
+
+      {dueReminder && (
+        <div className="reminder-notice" role="alert">
+          <p><span className="kicker">Reminder</span>{dueReminder.text}</p>
+          <button className="btn-quiet" onClick={() => setDueReminder(null)}>Done</button>
+        </div>
+      )}
 
       <div className="panel">
         <div className="grid gap-2">
@@ -360,12 +351,31 @@ export default function Implementation() {
           </button>
         </div>
 
-        {/* Secondary actions appear after save */}
-        {status === 'Saved plan.' && (
-          <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-cobalt-50">
-            <span className="done-mark">✓ Saved!</span>
-            <button className="btn-quiet" onClick={saveToCalendar}>Add to Calendar</button>
-            <button className="btn-quiet" onClick={addReminder}>Set reminder</button>
+        {/* Secondary actions stay after save until the next plan is saved */}
+        {justSaved && (
+          <div className="grid gap-3 p-3 rounded-xl bg-cobalt-50">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="done-mark">✓ Saved!</span>
+              <button className="btn-quiet" onClick={saveToCalendar}>Add to Calendar</button>
+              <button className="btn-quiet" onClick={() => setChoosingReminder((v) => !v)} aria-expanded={choosingReminder}>
+                Set reminder
+              </button>
+            </div>
+            {choosingReminder && (
+              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Remind me in">
+                <span className="field-hint">Remind me in</span>
+                {[
+                  { mins: 30, label: '30 minutes' },
+                  { mins: 60, label: '1 hour' },
+                  { mins: 120, label: '2 hours' },
+                  { mins: 240, label: '4 hours' }
+                ].map((o) => (
+                  <button key={o.mins} className="chip chip-suggestion" onClick={() => addReminder(o.mins, o.label)}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -411,7 +421,7 @@ export default function Implementation() {
           </ul>
         </div>
       )}
-      {status && status !== 'Saved plan.' && <p className="status-line" aria-live="polite">{status}</p>}
+      {status && <p className="status-line" aria-live="polite">{status}</p>}
 
       {selectedSpec && (
         <div className="panel">

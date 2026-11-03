@@ -2359,6 +2359,27 @@ a {
   }
 }
 
+/* A reminder that came due while the page was open */
+.reminder-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.9rem 1.1rem;
+  border-radius: 12px;
+  background: var(--accent-tint);
+  box-shadow: 0 0 0 1px var(--accent-line);
+}
+
+.reminder-notice p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+}
+
 /* ---------------------------------------------------------------
    Timeline Jump: one sitting, one question per screen
    --------------------------------------------------------------- */
