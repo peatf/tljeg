@@ -123,28 +123,29 @@ export default function LabelInsights({
   if (labels.length < 2) return null;
 
   return (
-    <div className="grid gap-4">
+    <div className="lab-insights">
       <button
         onClick={() => setShowInsights(!showInsights)}
-        className="text-sm text-stone-600 hover:text-stone-800 text-left font-mono tracking-wide"
+        className="lab-toggle"
+        aria-expanded={showInsights}
       >
-        {showInsights ? '▼' : '▶'} insights {clusters.length > 0 && `(${clusters.length} themes)`}
+        {showInsights ? '▾' : '▸'} insights {clusters.length > 0 && `(${clusters.length} themes)`}
       </button>
-      
+
       {showInsights && clusters.length > 0 && (
-        <div className="grid gap-3 p-4 bg-stone-50 border border-stone-200">
-          <h4 className="font-medium text-stone-800 tracking-wide">themes</h4>
+        <div className="lab-box">
+          <h4 className="kicker">themes</h4>
           <div className="grid gap-2">
             {clusters.map((cluster, index) => (
-              <div key={index} className={`p-3 rounded border ${cluster.color}`}>
-                <div className="font-medium text-sm mb-1 text-stone-800">{cluster.theme}</div>
-                <div className="text-xs text-stone-600 font-mono">
+              <div key={index} className="lab-item">
+                <div className="font-medium text-sm mb-1">{cluster.theme}</div>
+                <div className="text-xs font-mono opacity-80">
                   {cluster.labels.join(', ')}
                 </div>
                 {onClusterSuggestion && (
                   <button
                     onClick={() => onClusterSuggestion(cluster)}
-                    className="text-xs text-stone-600 hover:text-stone-800 mt-1 underline"
+                    className="btn-quiet text-xs"
                   >
                     focus on this
                   </button>
@@ -154,18 +155,18 @@ export default function LabelInsights({
           </div>
         </div>
       )}
-      
+
       {showReflectionPrompts && reflectionPrompts.length > 0 && (
-        <div className="grid gap-3 p-4 bg-stone-25 border border-stone-200">
-          <h4 className="font-medium text-stone-800 tracking-wide">reflection prompts</h4>
+        <div className="lab-box">
+          <h4 className="kicker">reflection prompts</h4>
           <div className="grid gap-2">
             {reflectionPrompts.map((prompt, index) => (
-              <div key={index} className="text-sm text-stone-700 p-3 bg-white border-l-2 border-l-stone-300">
+              <div key={index} className="lab-item text-sm">
                 {prompt}
                 {onReflectionPrompt && (
                   <button
                     onClick={() => onReflectionPrompt(prompt)}
-                    className="block text-xs text-stone-600 hover:text-stone-800 mt-2 underline"
+                    className="btn-quiet text-xs block"
                   >
                     use this prompt
                   </button>

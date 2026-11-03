@@ -1,38 +1,18 @@
-export interface NodePosition {
-  x: number;
-  y: number;
-}
-
-export interface BreakpointPositions {
-  xs: NodePosition;
-  md: NodePosition;
-  lg: NodePosition;
-  xl: NodePosition;
-}
-
 export interface ArtifactNode {
   id: string;
   label: string;
   to: string;
   stepIndex: number;
   ariaLabel: string;
-  angle?: number; // degrees (0 at top, clockwise)
+  /** Position on the loop, degrees clockwise from the top. VOID sits at the center instead. */
+  angle?: number;
   isVoid?: boolean;
-  imagePath?: string;
+  /** The scene's own opening line, shown when a step is previewed on the map. */
+  lead: string;
 }
 
-export interface ArtifactConnection {
-  from: string;
-  to: string;
-  enabled: {
-    xs: boolean;
-    md: boolean;
-    lg: boolean;
-    xl: boolean;
-  };
-}
-
-// Simple linear flow configuration
+// The loop runs clockwise: Safety, Clarity, Calibration, then down into VOID at the center,
+// back out to Implementation and Resets, and round to Safety again.
 export const artifactNodes: ArtifactNode[] = [
   {
     id: 'safety',
@@ -40,8 +20,8 @@ export const artifactNodes: ArtifactNode[] = [
     to: '/artifact/safety',
     stepIndex: 1,
     ariaLabel: 'Go to Safety (Step 1)',
-    imagePath: '/src/assets/safety.svg',
-    angle: 300
+    angle: 0,
+    lead: 'Shifts only land if they feel safe. Begin by grounding in internal safety.'
   },
   {
     id: 'clarity',
@@ -49,8 +29,8 @@ export const artifactNodes: ArtifactNode[] = [
     to: '/artifact/clarity',
     stepIndex: 2,
     ariaLabel: 'Go to Clarity (Step 2)',
-    imagePath: '/src/assets/clarity.svg',
-    angle: 30
+    angle: 72,
+    lead: 'Clarity means uncovering the identity shift that calls you. This can surface from desire, tension, or even envy.'
   },
   {
     id: 'calibration',
@@ -58,8 +38,8 @@ export const artifactNodes: ArtifactNode[] = [
     to: '/artifact/calibration',
     stepIndex: 3,
     ariaLabel: 'Go to Calibration (Step 3)',
-    imagePath: '/src/assets/calibration.svg',
-    angle: 240
+    angle: 144,
+    lead: 'Making clarity real in everyday life. Proof keeps the shift believable.'
   },
   {
     id: 'void',
@@ -68,7 +48,7 @@ export const artifactNodes: ArtifactNode[] = [
     stepIndex: 4,
     ariaLabel: 'Go to VOID (Anchor Point)',
     isVoid: true,
-    imagePath: '/src/assets/VOID_1.webp'
+    lead: 'VOID is a shower. VOID is the dissolve. Labels melt here, good or bad, success or failure, they soften until they disappear.'
   },
   {
     id: 'implementation',
@@ -76,8 +56,8 @@ export const artifactNodes: ArtifactNode[] = [
     to: '/artifact/implementation',
     stepIndex: 5,
     ariaLabel: 'Go to Implementation (Step 5)',
-    imagePath: '/src/assets/implementation.svg',
-    angle: 120
+    angle: 216,
+    lead: 'The actions you take are reflection of who you are.'
   },
   {
     id: 'resets',
@@ -85,63 +65,11 @@ export const artifactNodes: ArtifactNode[] = [
     to: '/artifact/resets',
     stepIndex: 6,
     ariaLabel: 'Go to Resets (Step 6)',
-    imagePath: '/src/assets/breathing.svg',
-    angle: 180
+    angle: 288,
+    lead: 'When things feel off, Resets bring you back gently.'
   }
 ];
 
-// Define the flow connections between nodes
-export const artifactConnections: ArtifactConnection[] = [
-  {
-    from: 'safety',
-    to: 'clarity',
-    enabled: { xs: true, md: true, lg: true, xl: true }
-  },
-  {
-    from: 'clarity',
-    to: 'calibration',
-    enabled: { xs: true, md: true, lg: true, xl: true }
-  },
-  {
-    from: 'calibration',
-    to: 'void',
-    enabled: { xs: true, md: true, lg: true, xl: true }
-  },
-  {
-    from: 'void',
-    to: 'implementation',
-    enabled: { xs: true, md: true, lg: true, xl: true }
-  },
-  {
-    from: 'implementation',
-    to: 'resets',
-    enabled: { xs: true, md: true, lg: true, xl: true }
-  },
-  {
-    from: 'resets',
-    to: 'safety',
-    enabled: { xs: false, md: false, lg: true, xl: true }
-  }
-];
-
-// Utility functions
 export function getNodeById(id: string): ArtifactNode | undefined {
   return artifactNodes.find(node => node.id === id);
-}
-
-export function getConnectionsForBreakpoint(): ArtifactConnection[] {
-  return artifactConnections;
-}
-
-export function getNextNode(currentNodeId: string): ArtifactNode | undefined {
-  const currentNode = getNodeById(currentNodeId);
-  if (!currentNode) return undefined;
-
-  const connection = artifactConnections.find(conn => conn.from === currentNodeId);
-  return connection ? getNodeById(connection.to) : undefined;
-}
-
-export function getPreviousNode(currentNodeId: string): ArtifactNode | undefined {
-  const connection = artifactConnections.find(conn => conn.to === currentNodeId);
-  return connection ? getNodeById(connection.from) : undefined;
 }

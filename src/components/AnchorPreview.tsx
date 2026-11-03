@@ -61,7 +61,6 @@ export default function AnchorPreview({
   const getBreathCircleStyle = () => {
     if (reducedMotion || !previewActive) return {};
     
-    const baseSize = 60;
     let scale = 1;
     
     if (type === 'breath_2_2_4') {
@@ -71,8 +70,6 @@ export default function AnchorPreview({
     }
     
     return {
-      width: baseSize,
-      height: baseSize,
       transform: `scale(${scale})`,
       transition: type === 'breath_2_2_4' 
         ? (breathPhase === 'inhale' ? 'transform 2s ease-in' : 
@@ -85,18 +82,13 @@ export default function AnchorPreview({
   const renderPreview = () => {
     if (type === 'breath_2_2_4' || type === 'breath_steady_4') {
       return (
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-2 w-20">
           <div
-            className="rounded-full"
-            style={{
-              ...getBreathCircleStyle(),
-              background: 'linear-gradient(135deg, var(--color-accent-organic-glow) 0%, var(--color-accent-organic) 100%)',
-              border: '2px solid var(--color-accent-organic)',
-              boxShadow: previewActive ? '0 0 20px var(--color-accent-organic-glow)' : 'none'
-            }}
+            className="anchor-mark anchor-mark--breath"
+            style={getBreathCircleStyle()}
           />
           {previewActive && !reducedMotion && (
-            <div className="text-xs font-mono tracking-wider" style={{ color: 'var(--color-accent-organic)' }}>
+            <div className="anchor-phase">
               {breathPhase === 'inhale' ? 'inhale' :
                 breathPhase === 'hold' ? 'hold' : 'exhale'}
             </div>
@@ -111,17 +103,7 @@ export default function AnchorPreview({
           {[1, 2, 3, 4].map(num => (
             <div
               key={num}
-              className="w-3 h-3 rounded-sm transition-all duration-200"
-              style={{
-                background: previewActive && !reducedMotion && countNumber === num
-                  ? 'var(--color-accent-organic)'
-                  : 'var(--color-accent-organic-glow)',
-                border: '1px solid var(--color-accent-organic)',
-                transform: previewActive && !reducedMotion && countNumber === num ? 'scale(1.3)' : 'scale(1)',
-                boxShadow: previewActive && !reducedMotion && countNumber === num
-                  ? '0 0 8px var(--color-accent-organic-glow)'
-                  : 'none'
-              }}
+              className={`anchor-mark anchor-mark--count ${previewActive && !reducedMotion && countNumber === num ? 'is-on' : ''}`}
             />
           ))}
         </div>
@@ -130,23 +112,11 @@ export default function AnchorPreview({
 
     if (type === 'stillness') {
       return (
-        <div
-          className="w-14 h-14 rounded-sm transition-all duration-1000"
-          style={{
-            border: '2px dashed var(--color-accent-organic)',
-            background: previewActive ? 'var(--color-accent-organic-soft)' : 'transparent',
-            opacity: previewActive ? 0.8 : 0.4
-          }}
-        />
+        <div className={`anchor-mark anchor-mark--still ${previewActive ? 'is-on' : ''}`} />
       );
     }
 
-    return (
-      <div
-        className="w-14 h-3 rounded-full"
-        style={{ background: 'var(--color-accent-warm-glow)', border: '1px solid var(--color-accent-warm)' }}
-      />
-    );
+    return <div className="anchor-mark anchor-mark--custom" />;
   };
 
   return (
@@ -154,33 +124,24 @@ export default function AnchorPreview({
       onClick={onClick}
       onMouseEnter={() => setHoverActive(true)}
       onMouseLeave={() => setHoverActive(false)}
-      className="section-card text-left transition-all duration-300 ease-out"
-      style={{
-        padding: '1.25rem 1.5rem',
-        borderColor: isSelected ? 'var(--color-accent-organic)' : undefined,
-        boxShadow: isSelected
-          ? '0 0 0 2px var(--color-accent-organic-glow), 0 4px 16px rgba(123, 158, 135, 0.12)'
-          : undefined,
-        transform: hoverActive && !isSelected ? 'translateY(-2px)' : undefined
-      }}
+      className={`anchor-card ${isSelected ? 'is-selected' : ''}`}
+      aria-pressed={isSelected}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="font-medium text-base" style={{ color: 'var(--color-text-primary)' }}>{label}</div>
-          <div className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>{description}</div>
-          {previewActive && !reducedMotion && (
-            <div className="text-xs mt-2 font-mono tracking-wide" style={{ color: 'var(--color-accent-organic)', opacity: 0.8 }}>
-              {type === 'breath_2_2_4' && '2s inhale · 2s hold · 4s exhale'}
-              {type === 'breath_steady_4' && 'steady 4-count breathing'}
-              {type === 'count_1234' && 'counting 1 · 2 · 3 · 4'}
-              {type === 'stillness' && 'pure awareness, no technique'}
-              {type === 'custom' && `${customValue || 'enter your anchor'}`}
-            </div>
-          )}
-        </div>
-        <div className="ml-4 flex-shrink-0">
-          {renderPreview()}
-        </div>
+      <div className="flex-1 min-w-0">
+        <div className="anchor-card__label">{label}</div>
+        <div className="anchor-card__desc">{description}</div>
+        {previewActive && !reducedMotion && (
+          <div className="anchor-card__detail">
+            {type === 'breath_2_2_4' && '2s inhale · 2s hold · 4s exhale'}
+            {type === 'breath_steady_4' && 'steady 4-count breathing'}
+            {type === 'count_1234' && 'counting 1 · 2 · 3 · 4'}
+            {type === 'stillness' && 'pure awareness, no technique'}
+            {type === 'custom' && `${customValue || 'enter your anchor'}`}
+          </div>
+        )}
+      </div>
+      <div className="flex-shrink-0 grid place-items-center w-24 h-20">
+        {renderPreview()}
       </div>
     </button>
   );

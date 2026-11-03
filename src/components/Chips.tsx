@@ -11,7 +11,7 @@ function getSourceLabel(source: 'seed' | 'user' | undefined): string {
   return '';
 }
 
-export function ChipList({ chips, onSelect }: { chips: Chip[]; onSelect?: (c: Chip) => void }) {
+export function ChipList({ chips, onSelect, selected }: { chips: Chip[]; onSelect?: (c: Chip) => void; selected?: string | null }) {
   const debugMode = typeof window !== 'undefined' && localStorage.getItem('mlDebug') === 'true';
 
   return (
@@ -21,17 +21,20 @@ export function ChipList({ chips, onSelect }: { chips: Chip[]; onSelect?: (c: Ch
         const isAnchor = c.source === 'seed';
         const methodLabel = debugMode && c.method ? c.method : '';
 
+        const isSelected = selected != null && selected === c.text;
+
         return (
           <button
             key={c.id}
             onClick={() => onSelect?.(c)}
-            className="chip chip-suggestion"
+            className={`chip ${isSelected ? 'chip-interactive' : 'chip-suggestion'}`}
+            aria-pressed={selected !== undefined ? isSelected : undefined}
             aria-label={`Suggestion ${c.text}${sourceLabel ? ` (${sourceLabel})` : ''}${methodLabel ? ` [${methodLabel}]` : ''}`}
             title={isAnchor ? "Anchor = the first trait or identity shift you want to ground in." : undefined}
           >
             {c.text}
-            {sourceLabel ? <span className="text-slate-400"> ({sourceLabel})</span> : null}
-            {debugMode && methodLabel ? <span className="text-purple-500"> [{methodLabel}]</span> : null}
+            {sourceLabel ? <span className="text-ink-400"> ({sourceLabel})</span> : null}
+            {debugMode && methodLabel ? <span className="text-cobalt-500"> [{methodLabel}]</span> : null}
           </button>
         );
       })}

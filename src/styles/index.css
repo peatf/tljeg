@@ -13,6 +13,11 @@
 
 body {
   font-family: theme('fontFamily.grotesk');
+  background-color: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   /* Background image is rendered in a fixed ::before layer so it isn't
      covered by app content on mobile (some mobile browsers ignore
@@ -37,8 +42,7 @@ body::before {
   background-position: center;
   background-repeat: no-repeat;
   pointer-events: none;
-  /* Reduce background to 20% opacity per user feedback */
-  opacity: 0.2;
+  opacity: 0.4;
 }
 
 @media (max-width: 640px) {
@@ -91,7 +95,6 @@ article p {
   height: var(--artifact-node-size);
   object-fit: contain;
   transition: transform 0.2s ease-in-out;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 /* VOID icon is 1.7x larger than other nodes */

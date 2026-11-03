@@ -90,6 +90,15 @@ function toTitledPage(section: string): Page {
   return { title, subtitle, body };
 }
 
+// guide.md keeps one paragraph per line and tab-bulleted prompts; give each its own block.
+function toReadableMarkdown(body: string): string {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*•\s*/, '- ').trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 function parseGuideIntoPages(content: string): Page[] {
   // Prefer splitting by top-level headings if present
   const byHeadings = splitByHeadings(content);
@@ -130,57 +139,56 @@ export default function TextOnlyReader() {
   const pageSubtitle = page?.subtitle;
 
   return (
-    <div className="grid gap-4 max-w-3xl mx-auto px-3 sm:px-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold doto-base doto-700">Timeline Jumping Guide</h1>
-        <div className="text-sm text-ink-600" aria-live="polite">
+    <div className="reader">
+      <div className="flex items-baseline justify-between flex-wrap gap-2">
+        <h1 className="kicker"><span className="kicker__index">TJG</span>Timeline Jumping Guide</h1>
+        <div className="kicker" aria-live="polite">
           Page {currentPage + 1} of {totalPages}
         </div>
       </div>
 
-      <header className="grid gap-1">
-        {pageTitle && <h2 className="text-lg sm:text-xl font-semibold font-humanist leading-snug">{pageTitle}</h2>}
-        {pageSubtitle && <p className="text-ink-700 text-sm sm:text-base">{pageSubtitle}</p>}
+      <header className="grid gap-3">
+        {pageTitle && pageSubtitle && <p className="kicker">{pageTitle}</p>}
+        {(pageSubtitle || pageTitle) && (
+          <h2 className="scene-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.25rem)' }}>{pageSubtitle || pageTitle}</h2>
+        )}
       </header>
-      
-      <article className="max-w-none font-humanist text-[15px] sm:text-base leading-relaxed min-h-[320px]">
-        <ReactMarkdown>{page?.body || ''}</ReactMarkdown>
+
+      <article className="reader-article">
+        <ReactMarkdown>{toReadableMarkdown(page?.body || '')}</ReactMarkdown>
       </article>
 
-      <div className="h-2" />
-      <div className="sticky bottom-0 left-0 right-0 bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-t border-slate-200 safe-bottom">
-        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-2">
-          <div className="flex items-center justify-between gap-2">
+      <div className="reader-bar">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={goPrev}
+            disabled={!canGoPrev}
+            className="btn-flow w-28"
+            aria-label="Previous page"
+          >
+            ← Back
+          </button>
+          <div className="kicker hidden sm:flex">Use ← → keys to navigate</div>
+          <button
+            onClick={goNext}
+            disabled={!canGoNext}
+            className="btn-flow btn-flow--primary w-28"
+            aria-label="Next page"
+          >
+            Next →
+          </button>
+        </div>
+        <div className="page-pixels" role="navigation" aria-label="Page indicators">
+          {Array.from({ length: totalPages }, (_, i) => (
             <button
-              onClick={goPrev}
-              disabled={!canGoPrev}
-              className="px-4 py-3 min-h-[44px] border rounded w-28 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Previous page"
+              key={i}
+              onClick={() => goToPage(i)}
+              aria-label={`Go to page ${i + 1}`}
+              aria-current={i === currentPage ? 'page' : undefined}
             >
-              ← Back
+              <span />
             </button>
-            <div className="text-xs sm:text-sm text-ink-600">Use ← → keys to navigate</div>
-            <button
-              onClick={goNext}
-              disabled={!canGoNext}
-              className="px-4 py-3 min-h-[44px] border rounded w-28 disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Next page"
-            >
-              Next →
-            </button>
-          </div>
-          <div className="flex justify-center mt-2">
-            <div className="flex gap-1" role="navigation" aria-label="Page indicators">
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => goToPage(i)}
-                  className={`w-2.5 h-2.5 rounded-full ${i === currentPage ? 'bg-ink-800' : 'bg-slate-300'}`}
-                  aria-label={`Go to page ${i + 1}`}
-                />
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

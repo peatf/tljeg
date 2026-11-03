@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import Timer from '../components/Timer';
 import { addContext, listContexts, deleteContext, listEntries } from '../storage/storage';
 import { ingestUserText } from '../ml';
+import { ScenePlate, SceneNext } from '../components/ScenePlate';
+import CalibrationIllustration from '../assets/calibration.svg?react';
 
 // Evocative context options for rehearsal
 const REHEARSAL_CONTEXTS = [
@@ -167,31 +169,31 @@ export default function Grounding() {
   const selectedContext = rehearsalContext === 'custom' ? customContext : rehearsalContext;
 
   return (
-    <section className="grid gap-6">
+    <section className="scene">
       {preloadedOverlap && (
-        <div className="section-card text-sm text-ink-800" aria-live="polite">
+        <div className="cue text-left" aria-live="polite">
           From Clarity: "{preloadedOverlap}"
         </div>
       )}
-      <header className="grid gap-2">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold doto-base doto-700">Grounding</h1>
-          <span className="text-sm text-ink-500">{sectionsComplete} of 3 complete</span>
-        </div>
-        <p className="text-ink-700 text-sm">Making clarity real in everyday life. Proof keeps the shift believable.</p>
-        <div className="section-card text-sm text-ink-700">
-          Clarity without evidence is fragile. Grounding is how you anchor it into everyday life. Rather than dramatic grand gestures, you calibrate to new ways of being through tiny signals: the way you answer an email, how you move in your kitchen, the choices you make mid-commute.
-        </div>
-      </header>
+      <ScenePlate
+        index="03"
+        kicker={`/ 06 · ${sectionsComplete} of 3 complete`}
+        title="Grounding"
+        lead="Making clarity real in everyday life. Proof keeps the shift believable."
+        art={<CalibrationIllustration />}
+        artLabel="Grounding illustration"
+      >
+        Clarity without evidence is fragile. Grounding is how you anchor it into everyday life. Rather than dramatic grand gestures, you calibrate to new ways of being through tiny signals: the way you answer an email, how you move in your kitchen, the choices you make mid-commute.
+      </ScenePlate>
 
       {/* Preloaded overlaps from Clarity (CAL-3) */}
       {clarityOverlaps.length > 0 && (
-        <div className="grid gap-3 p-4 border rounded-lg bg-bone-50/50">
-          <h2 className="font-semibold text-lg">From Clarity</h2>
+        <div className="panel panel--quiet">
+          <h2 className="panel-title">From Clarity</h2>
           {clarityOverlaps.map((o) => (
-            <div key={o.id} className="grid gap-2 p-3 rounded border bg-white">
-              <p className="text-sm text-ink-700">Earlier you noticed: "{o.text}"</p>
-              <p className="text-sm">Where else are you already being this way?</p>
+            <div key={o.id} className="grid gap-2 pt-3 border-t border-ink-200 first-of-type:border-t-0 first-of-type:pt-0">
+              <p className="panel-text">Earlier you noticed: "{o.text}"</p>
+              <p className="field-label">Where else are you already being this way?</p>
               <div className="input-panel">
                 <textarea
                   value={overlapExpansions[o.id] ?? ''}
@@ -201,10 +203,9 @@ export default function Grounding() {
                   aria-label="Connection expansion input"
                 />
               </div>
-              <p className="text-sm">How does this connection prove that this identity is already alive in you?</p>
+              <p className="field-hint">How does this connection prove that this identity is already alive in you?</p>
               <button
-                className="btn-flow justify-self-start"
-                style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
+                className="btn-flow btn-flow--primary justify-self-start"
                 onClick={async () => {
                   const text = overlapExpansions[o.id]?.trim();
                   if (!text) return;
@@ -226,53 +227,52 @@ export default function Grounding() {
       )}
 
       {/* Section 1: Spot Your Proof */}
-      <div className="grid gap-3 p-4 border rounded-lg">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-lg">Proof that it's already you</h2>
-            {proofComplete && <span className="text-green-600 text-sm">✓</span>}
-          </div>
+      <div className="panel">
+        <div className="panel-head">
+          <h2 className="panel-title">
+            <span className="step-num">01</span>Proof that it's already you
+            {proofComplete && <span className="done-mark">✓ saved</span>}
+          </h2>
           {latestTrait ? (
-            <p className="text-sm text-ink-600">You're grounding <strong>{latestTrait}</strong>. Capture one small way you already lived this trait today.</p>
+            <p className="panel-text">You're grounding <strong className="font-medium text-cobalt-500">{latestTrait}</strong>. Capture one small way you already lived this trait today.</p>
           ) : (
-            <p className="text-sm text-ink-600">Capture one small way you already lived this trait today.</p>
+            <p className="panel-text">Capture one small way you already lived this trait today.</p>
           )}
         </div>
-        <div className="input-panel">
+        <div className={`input-panel ${focusProof ? 'border-cobalt-500' : ''}`}>
           <textarea
             ref={proofTextareaRef}
             value={proof}
             onChange={(e) => setProof(e.target.value)}
-            className={`form-element min-h-[80px] ${focusProof ? 'border-purple-500 ring-2 ring-purple-200' : ''}`}
+            className="form-element min-h-[88px]"
             placeholder="Ex: I calmly answered an email while tired."
             aria-label="Proof input"
           />
         </div>
         <button
-          className="btn-flow disabled:opacity-50"
+          className="btn-flow btn-flow--primary justify-self-start"
           onClick={saveProof}
           disabled={!proof.trim()}
           aria-label="Save proof"
-          style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
         >
           Save Proof
         </button>
         {proofEntries.length > 0 && (
-          <div className="mt-2">
-            <h3 className="text-sm text-ink-600 mb-2">Saved Proofs</h3>
-            <ul className="space-y-1">
+          <div className="grid gap-2">
+            <h3 className="kicker">Saved Proofs</h3>
+            <ul className="saved-list">
               {proofEntries.map((p: any) => (
-                <li key={p.id} className="flex items-start gap-2 p-2 bg-bone-50 rounded">
+                <li key={p.id}>
                   <div className="flex-1">
-                    <div className="text-sm flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span>{p.label}</span>
                       {p.trait && (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px]">{p.trait}</span>
+                        <span className="tag">{p.trait}</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-ink-500 mt-0.5">{p.created_at ? timeAgo(p.created_at) : ''}{p.trait ? ` • ${p.trait}` : ''}</div>
+                    <div className="saved-meta">{p.created_at ? timeAgo(p.created_at) : ''}{p.trait ? ` • ${p.trait}` : ''}</div>
                   </div>
-                  <button className="text-xs text-ink-500 hover:text-ink-700" onClick={async () => { await deleteContext(p.id); await loadEntries(); }}>Delete</button>
+                  <button className="btn-quiet text-xs" onClick={async () => { await deleteContext(p.id); await loadEntries(); }}>Delete</button>
                 </li>
               ))}
             </ul>
@@ -281,13 +281,13 @@ export default function Grounding() {
       </div>
 
       {/* Section 2: Practice in Daily Life */}
-      <div className={`grid gap-3 p-4 border rounded-lg ${!hasProof ? 'opacity-50' : ''}`}>
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-lg">Rehearse your trait in ordinary life</h2>
-            {rehearsalSaved && <span className="text-green-600 text-sm">✓</span>}
-          </div>
-          <p className="text-sm text-ink-600">Pick a tiny, ordinary moment. This is where your new self comes alive.</p>
+      <div className={`panel ${!hasProof ? 'panel--locked' : ''}`}>
+        <div className="panel-head">
+          <h2 className="panel-title">
+            <span className="step-num">02</span>Rehearse your trait in ordinary life
+            {rehearsalSaved && <span className="done-mark">✓ saved</span>}
+          </h2>
+          <p className="panel-text">Pick a tiny, ordinary moment. This is where your new self comes alive.</p>
         </div>
 
         {/* Chip-based context selection */}
@@ -330,19 +330,18 @@ export default function Grounding() {
           </div>
         )}
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-3 flex-wrap items-center">
           <button
-            className="btn-flow inline-flex items-center gap-2"
-            style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
+            className="btn-flow btn-flow--primary"
             onClick={() => setRehearse(true)}
-            disabled={!hasProof || !selectedContext.trim()}
+            disabled={!hasProof || !selectedContext.trim() || rehearse}
             aria-label="Start 60 second rehearsal"
           >
-            <span aria-hidden>▶</span> Start 60-second practice
+            Start 60-second practice
           </button>
           {rehearsalComplete && (
             <button
-              className="btn-quiet"
+              className="btn-flow"
               onClick={saveRehearsal}
               disabled={!hasProof || !selectedContext.trim()}
               aria-label="Save rehearsal"
@@ -364,21 +363,21 @@ export default function Grounding() {
         )}
 
         {rehearsalEntries.length > 0 && (
-          <div className="mt-2">
-            <h3 className="text-sm text-ink-600 mb-2">Saved Rehearsals</h3>
-            <ul className="space-y-1">
+          <div className="grid gap-2">
+            <h3 className="kicker">Saved Rehearsals</h3>
+            <ul className="saved-list">
               {rehearsalEntries.map((r: any) => (
-                <li key={r.id} className="flex items-start gap-2 p-2 bg-bone-50 rounded">
+                <li key={r.id}>
                   <div className="flex-1">
-                    <div className="text-sm flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span>{r.label}</span>
                       {r.trait && (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px]">{r.trait}</span>
+                        <span className="tag">{r.trait}</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-ink-500 mt-0.5">{r.created_at ? timeAgo(r.created_at) : ''}{r.trait ? ` • ${r.trait}` : ''}</div>
+                    <div className="saved-meta">{r.created_at ? timeAgo(r.created_at) : ''}{r.trait ? ` • ${r.trait}` : ''}</div>
                   </div>
-                  <button className="text-xs text-ink-500 hover:text-ink-700" onClick={async () => { await deleteContext(r.id); await loadEntries(); }}>Delete</button>
+                  <button className="btn-quiet text-xs" onClick={async () => { await deleteContext(r.id); await loadEntries(); }}>Delete</button>
                 </li>
               ))}
             </ul>
@@ -387,13 +386,13 @@ export default function Grounding() {
       </div>
 
       {/* Section 3: Where Are You Being Stretched? (philosophical reframe) */}
-      <div className={`grid gap-3 p-4 border rounded-lg ${!hasProof ? 'opacity-50' : ''}`}>
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-semibold text-lg">Where Are You Being Stretched?</h2>
-            {stretchSaved && <span className="text-green-600 text-sm">✓</span>}
-          </div>
-          <p className="text-sm text-ink-600">
+      <div className={`panel ${!hasProof ? 'panel--locked' : ''}`}>
+        <div className="panel-head">
+          <h2 className="panel-title">
+            <span className="step-num">03</span>Where Are You Being Stretched?
+            {stretchSaved && <span className="done-mark">✓ saved</span>}
+          </h2>
+          <p className="panel-text">
             Do you feel drawn toward a choice or action that also brings up some tension? This edge is where growth lives. You don't have to force anything - just notice if something is calling you forward.
           </p>
         </div>
@@ -409,30 +408,29 @@ export default function Grounding() {
           />
         </div>
         <button
-          className="btn-flow disabled:opacity-50"
+          className="btn-flow btn-flow--primary justify-self-start"
           onClick={saveStretch}
           disabled={!hasProof || !stretch.trim()}
           aria-label="Save stretch"
-          style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
         >
           Save This Edge
         </button>
         {stretchEntries.length > 0 && (
-          <div className="mt-2">
-            <h3 className="text-sm text-ink-600 mb-2">Saved Edges</h3>
-            <ul className="space-y-1">
+          <div className="grid gap-2">
+            <h3 className="kicker">Saved Edges</h3>
+            <ul className="saved-list">
               {stretchEntries.map((f: any) => (
-                <li key={f.id} className="flex items-start gap-2 p-2 bg-bone-50 rounded">
+                <li key={f.id}>
                   <div className="flex-1">
-                    <div className="text-sm flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span>{f.label}</span>
                       {f.trait && (
-                        <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px]">{f.trait}</span>
+                        <span className="tag">{f.trait}</span>
                       )}
                     </div>
-                    <div className="text-[11px] text-ink-500 mt-0.5">{f.created_at ? timeAgo(f.created_at) : ''}{f.trait ? ` • ${f.trait}` : ''}</div>
+                    <div className="saved-meta">{f.created_at ? timeAgo(f.created_at) : ''}{f.trait ? ` • ${f.trait}` : ''}</div>
                   </div>
-                  <button className="text-xs text-ink-500 hover:text-ink-700" onClick={async () => { await deleteContext(f.id); await loadEntries(); }}>Delete</button>
+                  <button className="btn-quiet text-xs" onClick={async () => { await deleteContext(f.id); await loadEntries(); }}>Delete</button>
                 </li>
               ))}
             </ul>
@@ -440,7 +438,14 @@ export default function Grounding() {
         )}
       </div>
 
-      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
+      {status && <p className="status-line" aria-live="polite">{status}</p>}
+
+      <SceneNext
+        links={[
+          { to: '/artifact/void', label: 'Continue to VOID', primary: true },
+          { to: '/artifact/resets', label: 'Resets' },
+        ]}
+      />
     </section>
   );
 }

@@ -1,16 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Timer from '../components/Timer';
 import SafetyIllustration from '../assets/safety.svg?react';
+import safetyArt from '../assets/safety.svg';
 import { ChipList } from '../components/Chips';
 import { addEntry } from '../storage/storage';
 import { getSuggestions } from '../ml';
+import { ScenePlate, SceneNext } from '../components/ScenePlate';
+
+// Ordered to follow the scan down the body: head and breath, shoulders, feet, then the whole of you.
+const SCAN_CUES = [
+  "Notice your breath...",
+  "Check in with your shoulders...",
+  "Feel your feet on the ground...",
+  "Sense the space around you...",
+  "Listen to what your body needs..."
+];
 
 export default function Safety() {
   const [consent, setConsent] = useState('');
   const [needsText, setNeedsText] = useState('');
   const [chips, setChips] = useState<{ id: string; text: string; source: 'seed' | 'user' }[]>([]);
   const [scanStarted, setScanStarted] = useState(false);
-  const doneRef = useRef(false);
+  const [scanDone, setScanDone] = useState(false);
+  const [scanRun, setScanRun] = useState(0);
   const [env, setEnv] = useState<string[]>([]);
   const [partName, setPartName] = useState('');
   const [partNeed, setPartNeed] = useState('');
@@ -28,19 +40,20 @@ export default function Safety() {
 
   // Rotating scan cues during 30s timer
   useEffect(() => {
-    if (!scanStarted) return;
-    const cues = [
-      "Notice your breath...",
-      "Feel your feet on the ground...",
-      "Check in with your shoulders...",
-      "Sense the space around you...",
-      "Listen to what your body needs..."
-    ];
+    if (!scanStarted || scanDone) return;
+    const cues = SCAN_CUES;
     const interval = setInterval(() => {
       setCurrentScanCue(prev => (prev + 1) % cues.length);
     }, 6000); // Change every 6 seconds during 30s scan
     return () => clearInterval(interval);
-  }, [scanStarted]);
+  }, [scanStarted, scanDone, scanRun]);
+
+  function startScan() {
+    setCurrentScanCue(0);
+    setScanDone(false);
+    setScanStarted(true);
+    setScanRun((n) => n + 1);
+  }
 
   async function save() {
     setLoading(true);
@@ -65,23 +78,26 @@ export default function Safety() {
   }
 
   return (
-    <section className="grid gap-6">
-      <header className="grid gap-2">
-        <h1 className="text-2xl font-bold doto-base doto-700">Safety</h1>
-        <p className="text-ink-700 text-sm">Shifts only land if they feel safe. Begin by grounding in internal safety.</p>
-        <div className="mx-auto" role="img" aria-label="Safety illustration" title="Safety illustration">
-          <SafetyIllustration />
-        </div>
-        <div className="section-card text-sm text-ink-700">
-          Change only roots when your system feels safe enough to let it land. If you try to push transformation from a body still vibrating with stress, it's like planting seeds in pebbles: nothing takes. This stage is where you check your environment, name what you need, and give yourself permission to open.
-        </div>
-      </header>
-      <p className="text-ink-700 max-w-prose">Get comfortable first, then check in with yourself. If you're ready, run a gentle 30-second scan.</p>
+    <section className="scene">
+      <ScenePlate
+        index="01"
+        kicker="/ 06"
+        title="Safety"
+        lead="Shifts only land if they feel safe. Begin by grounding in internal safety."
+        art={<SafetyIllustration />}
+        artLabel="Safety illustration"
+      >
+        Change only roots when your system feels safe enough to let it land. If you try to push transformation from a body still vibrating with stress, it's like planting seeds in pebbles: nothing takes. This stage is where you check your environment, name what you need, and give yourself permission to open.
+      </ScenePlate>
+
+      <p className="scene-lead">Get comfortable first, then check in with yourself. If you're ready, run a gentle 30-second scan.</p>
 
       {/* Section 1: Prepare Your Space (first in new order) */}
-      <div className="grid gap-2">
-        <p className="text-sm font-medium text-ink-800">Your environment</p>
-        <p className="text-sm text-ink-600">Prepare your space before you begin.</p>
+      <div className="panel">
+        <div className="panel-head">
+          <p className="panel-title"><span className="step-num">01</span>Your environment</p>
+          <p className="panel-text">Prepare your space before you begin.</p>
+        </div>
         <div className="flex flex-wrap gap-2" aria-live="polite">
           {['Door locked', 'Water nearby', 'Warmth', 'Low light', 'Phone silent'].map((e) => {
             const active = env.includes(e);
@@ -99,8 +115,19 @@ export default function Safety() {
               </button>
             );
           })}
+          {env.filter((e) => !['Door locked', 'Water nearby', 'Warmth', 'Low light', 'Phone silent'].includes(e)).map((e) => (
+            <button
+              key={e}
+              className="chip chip-interactive"
+              onClick={() => setEnv((cur) => cur.filter((x) => x !== e))}
+              aria-pressed={true}
+              aria-label={`Environment option: ${e}`}
+            >
+              ✔ {e}
+            </button>
+          ))}
         </div>
-        <div className="flex gap-2 items-center mt-2">
+        <div className="flex gap-2 items-stretch">
           <div className="input-panel flex-1">
             <input
               type="text"
@@ -128,12 +155,12 @@ export default function Safety() {
       </div>
 
       {/* Section 2: Consent check-in (after preparing space) */}
-      <div className="grid gap-3">
-        <fieldset>
-          <legend className="text-sm font-medium">Consent check-in</legend>
-          <p className="text-xs text-ink-600 mb-2">Now that you're settled, are you ready to continue?</p>
-          <div className="flex gap-4 mt-2">
-            <label className="flex items-center gap-2">
+      <div className="panel">
+        <fieldset className="grid gap-3">
+          <legend className="panel-title"><span className="step-num">02</span>Consent check-in</legend>
+          <p className="panel-text">Now that you're settled, are you ready to continue?</p>
+          <div className="choice-row">
+            <label className="choice">
               <input
                 type="radio"
                 name="consent"
@@ -144,7 +171,7 @@ export default function Safety() {
               />
               <span>Yes</span>
             </label>
-            <label className="flex items-center gap-2">
+            <label className="choice">
               <input
                 type="radio"
                 name="consent"
@@ -157,99 +184,111 @@ export default function Safety() {
             </label>
           </div>
         </fieldset>
+
+        {/* Section 3: Name what you need (only if "Not yet" selected) */}
+        {consent === 'not yet' && (
+          <div className="grid gap-4 pt-4 border-t border-ink-200">
+            <div className="grid gap-2">
+              <p className="field-label">Your inner state</p>
+              <label className="field-hint" htmlFor="needs">Name what you need before moving forward</label>
+              <div className="input-panel">
+                <input
+                  id="needs"
+                  value={needsText}
+                  onChange={(e) => setNeedsText(e.target.value)}
+                  placeholder="e.g., rest, warmth, quiet (comma to add multiple)"
+                  className="form-element"
+                  aria-label="Needs input"
+                  aria-describedby="needs-hint"
+                />
+              </div>
+              <p id="needs-hint" className="field-hint">Suggestions are optional. Choose only what feels kind.</p>
+              <ChipList chips={chips} onSelect={(c) => setNeedsText(c.text)} />
+            </div>
+
+            <div className="grid gap-2">
+              <p className="field-hint">If a part says "not yet," name it and its need:</p>
+              <label htmlFor="part-name" className="field-label">Part name</label>
+              <div className="input-panel">
+                <input id="part-name" value={partName} onChange={(e) => setPartName(e.target.value)} className="form-element" aria-label="Part name" />
+              </div>
+              <label htmlFor="part-need" className="field-label">What does it need?</label>
+              <div className="input-panel">
+                <input id="part-need" value={partNeed} onChange={(e) => setPartNeed(e.target.value)} className="form-element" aria-label="Part need" />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Section 3: Name what you need (only if "Not yet" selected) */}
-      {consent === 'not yet' && (
-        <div className="grid gap-3 p-4 border rounded-lg border-amber-200 bg-amber-50/30">
-          <div className="grid gap-2">
-            <p className="text-sm font-medium text-ink-800">Your inner state</p>
-            <label className="text-sm text-ink-600" htmlFor="needs">Name what you need before moving forward</label>
-            <input
-              id="needs"
-              value={needsText}
-              onChange={(e) => setNeedsText(e.target.value)}
-              placeholder="e.g., rest, warmth, quiet (comma to add multiple)"
-              className="border border-slate-300 rounded p-2"
-              aria-label="Needs input"
-              aria-describedby="needs-hint"
-            />
-            <p id="needs-hint" className="text-xs text-ink-600">Suggestions are optional. Choose only what feels kind.</p>
-            <ChipList chips={chips} onSelect={(c) => setNeedsText(c.text)} />
-          </div>
-
-          <div className="grid gap-2">
-            <p className="text-sm text-ink-600">If a part says "not yet," name it and its need:</p>
-            <label htmlFor="part-name" className="text-sm">Part name</label>
-            <input id="part-name" value={partName} onChange={(e) => setPartName(e.target.value)} className="border p-2 rounded" aria-label="Part name" />
-            <label htmlFor="part-need" className="text-sm">What does it need?</label>
-            <input id="part-need" value={partNeed} onChange={(e) => setPartNeed(e.target.value)} className="border p-2 rounded" aria-label="Part need" />
-          </div>
-        </div>
-      )}
 
       {/* Section 4: Body scan (only visible after consent is "yes" or after acknowledging "not yet") */}
       {consent && (
-        <div className="grid gap-3">
-          <p className="text-sm text-ink-600">Close your eyes and notice how your body feels right now.</p>
-          <button
-            className="btn-flow inline-flex items-center gap-2"
-            onClick={() => setScanStarted(true)}
-            aria-label="Start 30 second scan"
+        <div className="panel">
+          <div className="panel-head">
+            <p className="panel-title"><span className="step-num">03</span>Body scan</p>
+            <p className="panel-text">Close your eyes and notice how your body feels right now.</p>
+          </div>
+          {/* The scan itself: a band of attention moves from head to feet over the 30 seconds,
+              and what it has passed stays lit. The band is the timer. */}
+          <div
+            key={scanRun}
+            className={`scan-space ${scanStarted && !scanDone ? 'is-scanning' : ''} ${scanDone ? 'is-done' : ''}`}
           >
-            <span aria-hidden>▶</span> Start 30-second scan
-          </button>
-          {scanStarted && (
-            <div className="grid gap-3">
+            <div className="scan-figure" aria-hidden>
+              <img src={safetyArt} alt="" className="scan-layer scan-layer--base" />
+              <img src={safetyArt} alt="" className="scan-layer scan-layer--trail" />
+              <img src={safetyArt} alt="" className="scan-layer scan-layer--band" />
+            </div>
+            {scanStarted && !scanDone && (
               <Timer
                 seconds={30}
                 label="30 second scan"
-                onDone={() => {
-                  if (!doneRef.current) {
-                    doneRef.current = true;
-                  }
-                }}
+                className="scan-time"
+                onDone={() => setScanDone(true)}
               />
-              <div className="text-center p-3 bg-blue-50 rounded-lg text-blue-800 text-sm italic" aria-live="polite">
-                {["Notice your breath...", "Feel your feet on the ground...", "Check in with your shoulders...", "Sense the space around you...", "Listen to what your body needs..."][currentScanCue]}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Section 5: Body reflection (after scan) */}
-      {consent && (
-        <div className="grid gap-3">
-          <div className="grid gap-2">
-            <label htmlFor="body-reflection" className="text-sm">Where in your body do you feel ready/not ready?</label>
-            <textarea id="body-reflection" value={bodyReflection} onChange={(e) => setBodyReflection(e.target.value)} className="border p-2 rounded min-h-[80px]" aria-label="Body readiness reflection" />
+            )}
+            {scanStarted && !scanDone && (
+              <p className="scan-cue" aria-live="polite">
+                {SCAN_CUES[currentScanCue]}
+              </p>
+            )}
           </div>
-          <div className="flex gap-3">
-            <button className="btn-flow disabled:opacity-50" onClick={save} disabled={loading} aria-label="Save safety note" style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}>
+          {(!scanStarted || scanDone) && (
+            <button
+              className={`btn-flow ${scanDone ? '' : 'btn-flow--primary'} justify-self-start`}
+              onClick={startScan}
+              aria-label="Start 30 second scan"
+            >
+              Start 30-second scan
+            </button>
+          )}
+
+          {/* Section 5: Body reflection (after scan) */}
+          <div className="grid gap-2 pt-2">
+            <label htmlFor="body-reflection" className="field-label">Where in your body do you feel ready/not ready?</label>
+            <div className="input-panel">
+              <textarea id="body-reflection" value={bodyReflection} onChange={(e) => setBodyReflection(e.target.value)} className="form-element min-h-[96px]" aria-label="Body readiness reflection" />
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="btn-flow btn-flow--primary" onClick={save} disabled={loading} aria-label="Save safety note">
               {loading ? 'Saving…' : 'Save'}
             </button>
+            {status && <p className="status-line" aria-live="polite">{status}</p>}
           </div>
         </div>
       )}
 
       {/* FAQ-style reassurance */}
-      <p className="text-sm text-ink-500 italic">You can't mess this up. If something feels off, you can always come back.</p>
+      <p className="note">You can't mess this up. If something feels off, you can always come back.</p>
 
       {/* What's next guidance */}
-      <div className="mt-6 pt-4 border-t border-slate-200">
-        <p className="text-sm text-ink-600 mb-3">Ready to continue?</p>
-        <div className="flex flex-wrap gap-3">
-          <a href="/artifact/clarity" className="btn-flow inline-flex items-center gap-2" style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}>
-            Continue to Clarity <span aria-hidden>→</span>
-          </a>
-          <a href="/artifact/void" className="btn-quiet inline-flex items-center">
-            Drop into VOID first
-          </a>
-        </div>
-      </div>
-
-      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
+      <SceneNext
+        links={[
+          { to: '/artifact/clarity', label: 'Continue to Clarity', primary: true },
+          { to: '/artifact/void', label: 'Drop into VOID first' },
+        ]}
+      />
     </section>
   );
 }

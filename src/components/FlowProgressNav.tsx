@@ -3,8 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 const FLOW_STEPS = [
   { id: 'safety', label: 'Safety', path: '/artifact/safety' },
   { id: 'clarity', label: 'Clarity', path: '/artifact/clarity' },
-  { id: 'void', label: 'VOID', path: '/artifact/void' },
   { id: 'calibration', label: 'Grounding', path: '/artifact/calibration' },
+  { id: 'void', label: 'VOID', path: '/artifact/void' },
   { id: 'implementation', label: 'Action', path: '/artifact/implementation' },
 ] as const;
 

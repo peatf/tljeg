@@ -16,7 +16,7 @@ export default function DissolveWord({ text, delay = 0 }: { text: string; delay?
 
   // Use enhanced CSS classes for dissolution
   const className = useMemo(() => {
-    const classes = ['text-lg', 'text-ink-700'];
+    const classes = ['text-lg', 'void-subheading'];
 
     if (!reduced) {
       classes.push('dissolve-word');

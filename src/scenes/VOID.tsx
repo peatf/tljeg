@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 // Inline-controllable SVG for breathing animation
 // Fallback raster for wide support
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { addEntry } from '../storage/storage';
 import DissolveWord from '../components/DissolveWord';
 import { useReducedMotionPref } from '../hooks/useReducedMotionPref';
@@ -10,6 +10,8 @@ import VoidLabel from '../components/VoidLabel';
 import AnchorPreview from '../components/AnchorPreview';
 import ImmersiveHoldSpace from '../components/ImmersiveHoldSpace';
 import LabelInsights from '../components/LabelInsights';
+import { ScenePlate } from '../components/ScenePlate';
+import voidImage from '../assets/VOID_1.webp';
 
 type VoidState = 'enter_labels' | 'choose_anchor' | 'hold' | 'release' | 'integration';
 
@@ -229,16 +231,23 @@ export default function VOIDScene() {
 
   if (state === 'enter_labels') {
     return (
-      <section className="grid gap-6">
-        <header className="grid gap-2">
-          <h1 className="text-2xl font-bold doto-base doto-700">VOID{autostart ? ' (Quick Start)' : ''}</h1>
-          <p className="text-ink-700 text-sm">{autostart ? 'Ready to dissolve. Add your labels and begin.' : 'VOID is a shower. VOID is the dissolve. Labels melt here, good or bad, success or failure, they soften until they disappear. Neutrality creates breathing room. Your being relaxes, no longer defending or rejecting a label. And in that emptiness, possibility pulls you forward. VOID is powerful because when you let go, space opens. And because desire is magnetic space naturally calls in the new identity you\'ve been clarifying and calibrating.'}</p>
-        </header>
+      <section className="scene">
+        <ScenePlate
+          index="04"
+          kicker="/ 06"
+          title={`VOID${autostart ? ' (Quick Start)' : ''}`}
+          art={<img src={voidImage} alt="" />}
+          artLabel="The VOID"
+        >
+          {autostart ? 'Ready to dissolve. Add your labels and begin.' : 'VOID is a shower. VOID is the dissolve. Labels melt here, good or bad, success or failure, they soften until they disappear. Neutrality creates breathing room. Your being relaxes, no longer defending or rejecting a label. And in that emptiness, possibility pulls you forward. VOID is powerful because when you let go, space opens. And because desire is magnetic space naturally calls in the new identity you\'ve been clarifying and calibrating.'}
+        </ScenePlate>
 
-        <div className="grid gap-4">
-          <h2 className="text-lg font-semibold">What labels feel heavy right now?</h2>
+        <div className="panel">
+          <div className="panel-head">
+            <h2 className="panel-title"><span className="step-num">01</span>What labels feel heavy right now?</h2>
+          </div>
 
-          <div className="grid gap-3">
+          <div className="flex gap-2 items-stretch">
             <InputPanel
               label="LABELS"
               placeholder="failure, tired, too much…"
@@ -246,6 +255,7 @@ export default function VOIDScene() {
               onChange={(e) => setLabelInput((e.target as HTMLInputElement).value)}
               onKeyDown={(e) => e.key === 'Enter' && addLabelsFromInput()}
               ref={labelInputRef as any}
+              className="flex-1"
             />
             <button
               onClick={addLabelsFromInput}
@@ -258,9 +268,9 @@ export default function VOIDScene() {
           </div>
 
           {labels.length > 0 && (
-            <div className="grid gap-3">
-              <h3 className="font-medium">Labels to dissolve:</h3>
-              <div className="flex flex-wrap gap-3 p-6 bg-stone-25 border border-stone-100 min-h-20">
+            <div className="grid gap-4">
+              <h3 className="kicker">Labels to dissolve:</h3>
+              <div className="flex flex-wrap gap-3 p-6 rounded-xl bg-ink-900 min-h-20">
                 {labels.map((label, index) => (
                   <VoidLabel
                     key={index}
@@ -271,19 +281,12 @@ export default function VOIDScene() {
                 ))}
               </div>
 
-              <LabelInsights
-                labels={labels}
-                onClusterSuggestion={(cluster) => {
-                  // Optional: could focus the experience on a specific theme
-                  console.log('Focus on theme:', cluster.theme);
-                }}
-              />
+              <LabelInsights labels={labels} />
 
               <button
                 onClick={() => setState('choose_anchor')}
                 aria-label="Continue to Anchor Selection"
-                className="btn-flow w-full"
-                style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
+                className="btn-flow btn-flow--primary btn-flow--wide"
               >
                 Continue to Anchor Selection
               </button>
@@ -298,59 +301,61 @@ export default function VOIDScene() {
     const isReady = selectedAnchor && (selectedAnchor.type !== 'custom' || customAnchor.trim());
 
     return (
-      <section className="grid gap-6 pb-24">
-        <header className="grid gap-2">
-          <h1 className="text-2xl font-bold doto-base doto-700">Choose Your Anchor</h1>
-          <p className="text-ink-700 text-sm">
-            <strong>Step 1:</strong> Tap an anchor below to select it. <strong>Step 2:</strong> Press "Begin Hold" to start.
+      <section className="scene pb-40">
+        <header className="grid gap-3">
+          <p className="kicker"><span className="kicker__index">04</span>VOID</p>
+          <h1 className="scene-title">Choose Your Anchor</h1>
+          <p className="scene-explainer">
+            <strong className="font-medium text-ink-900">Step 1:</strong> Tap an anchor below to select it. <strong className="font-medium text-ink-900">Step 2:</strong> Press "Begin Hold" to start.
           </p>
-          <p className="text-ink-600 text-xs mt-1">
-            Pick your favorite meditative sound and play that as a companion if you would like. Or if you want a guided Timeline Jump, grab <a href="https://www.peathefeary.com/classesandaudios/p/timeline-jumping-audio" className="text-purple-600 hover:text-purple-800 underline" target="_blank" rel="noopener noreferrer">one here</a>.
+          <p className="field-hint">
+            Pick your favorite meditative sound and play that as a companion if you would like. Or if you want a guided Timeline Jump, grab <a href="https://www.peathefeary.com/classesandaudios/p/timeline-jumping-audio" className="text-cobalt-500 underline hover:text-cobalt-700" target="_blank" rel="noopener noreferrer">one here</a>.
           </p>
         </header>
 
-        <div className="grid gap-4">
-          <div className="grid gap-4">
-            {[
-              { type: 'breath_2_2_4' as const, label: 'Breath 2-2-4', desc: 'Inhale 2, hold 2, exhale 4' },
-              { type: 'breath_steady_4' as const, label: 'Breath steady 4', desc: 'Steady 4-count breathing' },
-              { type: 'count_1234' as const, label: 'Count 1-2-3-4', desc: 'Simple counting pattern' },
-              { type: 'stillness' as const, label: 'Stillness', desc: 'Pure awareness, no technique' },
-              { type: 'custom' as const, label: 'Custom', desc: 'Your own anchor' }
-            ].map((anchor) => (
-              <AnchorPreview
-                key={anchor.type}
-                type={anchor.type}
-                isSelected={selectedAnchor?.type === anchor.type}
-                onClick={() => selectAnchor(anchor.type)}
-                label={anchor.label}
-                description={anchor.desc}
-                customValue={customAnchor}
-              />
-            ))}
-          </div>
+        <div className="grid gap-3">
+          {[
+            { type: 'breath_2_2_4' as const, label: 'Breath 2-2-4', desc: 'Inhale 2, hold 2, exhale 4' },
+            { type: 'breath_steady_4' as const, label: 'Breath steady 4', desc: 'Steady 4-count breathing' },
+            { type: 'count_1234' as const, label: 'Count 1-2-3-4', desc: 'Simple counting pattern' },
+            { type: 'stillness' as const, label: 'Stillness', desc: 'Pure awareness, no technique' },
+            { type: 'custom' as const, label: 'Custom', desc: 'Your own anchor' }
+          ].map((anchor) => (
+            <AnchorPreview
+              key={anchor.type}
+              type={anchor.type}
+              isSelected={selectedAnchor?.type === anchor.type}
+              onClick={() => selectAnchor(anchor.type)}
+              label={anchor.label}
+              description={anchor.desc}
+              customValue={customAnchor}
+            />
+          ))}
 
           {selectedAnchor?.type === 'custom' && (
-            <input
-              type="text"
-              value={customAnchor}
-              onChange={(e) => setCustomAnchor(e.target.value)}
-              placeholder="Describe your custom anchor..."
-              className="border p-3 rounded"
-              onBlur={() => selectedAnchor && setSelectedAnchor({ ...selectedAnchor, custom: customAnchor })}
-            />
+            <div className="input-panel">
+              <input
+                type="text"
+                value={customAnchor}
+                onChange={(e) => setCustomAnchor(e.target.value)}
+                placeholder="Describe your custom anchor..."
+                className="form-element"
+                aria-label="Custom anchor"
+                onBlur={() => selectedAnchor && setSelectedAnchor({ ...selectedAnchor, custom: customAnchor })}
+              />
+            </div>
           )}
         </div>
 
         {/* Sticky bottom action bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-bone-50 border-t border-stone-200 p-4 z-40 shadow-lg">
-          <div className="max-w-3xl mx-auto">
+        <div className="action-bar">
+          <div className="max-w-xl mx-auto grid gap-3">
             {!selectedAnchor && (
-              <p className="text-center text-ink-600 text-sm mb-3">Tap an anchor above to select it</p>
+              <p className="text-center field-hint">Tap an anchor above to select it</p>
             )}
             {selectedAnchor && (
-              <p className="text-center text-ink-700 text-sm mb-3 font-medium">
-                Selected: <span className="text-purple-700">{getAnchorDisplay(selectedAnchor)}</span>
+              <p className="text-center field-hint">
+                Selected: <span className="font-medium text-cobalt-500">{getAnchorDisplay(selectedAnchor)}</span>
               </p>
             )}
             <div className="flex gap-3">
@@ -363,8 +368,7 @@ export default function VOIDScene() {
               <button
                 onClick={() => startHold()}
                 disabled={!isReady}
-                className="btn-flow flex-1 disabled:opacity-50 py-4 text-lg font-semibold"
-                style={isReady ? { background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' } : {}}
+                className="btn-flow btn-flow--primary btn-flow--wide flex-1"
               >
                 {isReady ? 'Begin Hold (90s)' : 'Select an Anchor to Begin'}
               </button>
@@ -407,7 +411,7 @@ export default function VOIDScene() {
             ))}
 
             {dissolvingLabels.length === 0 && (
-              <div className="void-heading text-xl" style={{ color: 'var(--color-accent-organic)' }}>
+              <div className="void-heading text-xl" style={{ color: 'var(--void-accent)' }}>
                 welcome to your new timeline
               </div>
             )}
@@ -419,8 +423,8 @@ export default function VOIDScene() {
 
   if (state === 'integration') {
     return (
-      <section className="void-immersive" style={{ overflowY: 'auto', justifyContent: 'flex-start', paddingTop: '2.5rem', paddingBottom: '2.5rem' }}>
-        <div className="grid gap-8 max-w-xl w-full px-5">
+      <section className="void-immersive" style={{ overflowY: 'auto', justifyContent: 'flex-start', paddingTop: '3rem', paddingBottom: '3rem' }}>
+        <div className="void-integration">
           <header className="grid gap-3 text-center">
             <h1 className="void-heading text-2xl sm:text-3xl">Integration</h1>
             <p className="void-subheading text-sm">Capture what emerged from the space.</p>
@@ -477,6 +481,9 @@ export default function VOIDScene() {
             >
               Save Session
             </button>
+            <Link to="/artifact/implementation" className="void-btn-quiet text-center">
+              Continue to Implementation
+            </Link>
 
             {status && <p className="void-subheading text-sm mt-2" aria-live="polite">{status}</p>}
           </div>

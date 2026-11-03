@@ -3,6 +3,8 @@ import { addReleaseNote, addRuntimeSpec, listReleaseNotes, listRuntimeSpecs, del
 import { getSuggestions } from '../ml';
 import Timer from '../components/Timer';
 import { makeIcsEvent } from '../storage/export';
+import { ScenePlate, SceneNext } from '../components/ScenePlate';
+import ImplementationIllustration from '../assets/implementation.svg?react';
 
 export default function Implementation() {
   const [label, setLabel] = useState('');
@@ -265,70 +267,82 @@ export default function Implementation() {
   }
 
   return (
-    <section className="grid gap-6">
-      <header className="grid gap-2">
-        <h1 className="text-2xl font-bold doto-base doto-700">Implementation</h1>
-        <p className="text-ink-700 text-sm">The actions you take are reflection of who you are.</p>
-        <div className="section-card text-sm text-ink-700">
-          This is where your clarified, calibrated self moves into the world. Keep in mind, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it pulls you toward the aligned choices, conversations, and small acts that belong to this version of you.
-          {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
+    <section className="scene">
+      <ScenePlate
+        index="05"
+        kicker="/ 06"
+        title="Implementation"
+        lead="The actions you take are reflection of who you are."
+        art={<ImplementationIllustration />}
+        artLabel="Implementation illustration"
+      >
+        This is where your clarified, calibrated self moves into the world. Keep in mind, you don't have to plan it all out. Desire has gravity. When you step out of VOID, it pulls you toward the aligned choices, conversations, and small acts that belong to this version of you.
+        {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
+      </ScenePlate>
+
+      <div className="panel">
+        <div className="grid gap-2">
+          <label htmlFor="label" className="field-label"><span className="step-num mr-3">01</span>Title your next 24 hours</label>
+          <div className="input-panel">
+            <input id="label" value={label} onChange={(e) => setLabel(e.target.value)} className="form-element" aria-label="Plan title" />
+          </div>
         </div>
-      </header>
-      <div className="grid gap-2">
-        <label htmlFor="label" className="text-sm">Title your next 24 hours</label>
-        <div className="input-panel">
-          <input id="label" value={label} onChange={(e) => setLabel(e.target.value)} className="form-element" aria-label="Plan title" />
+        <div className="grid gap-2">
+          <label htmlFor="principle" className="field-label"><span className="step-num mr-3">02</span>What is one thing that feels new and fresh in you today?</label>
+          <div className="input-panel">
+            <input id="principle" value={principle} onChange={(e) => setPrinciple(e.target.value)} className="form-element" aria-label="Principle" />
+          </div>
         </div>
-        <label htmlFor="principle" className="text-sm">What is one thing that feels new and fresh in you today?</label>
-        <div className="input-panel">
-          <input id="principle" value={principle} onChange={(e) => setPrinciple(e.target.value)} className="form-element" aria-label="Principle" />
+        <div className="grid gap-2">
+          <label htmlFor="micro1" className="field-label">
+            <span className="step-num mr-3">03</span>Do you feel any moves or actions arising that feel like a direct expression of who you've become?
+            <span className="block field-hint font-normal mt-1">
+              It's okay if nothing arises, let life respond to you.
+            </span>
+          </label>
+          <div className="input-panel">
+            <input id="micro1" value={micro1} onChange={(e) => setMicro1(e.target.value)} className="form-element" placeholder="Optional: one small act..." aria-label="Small act" />
+          </div>
+          <div className="flex flex-wrap gap-2 mt-1" role="group" aria-label="Suggestions">
+            {microActChips.map((c) => (
+              <button key={c.id} className={`chip chip-suggestion ${c.from === 'void' ? 'chip--from' : ''}`} onClick={() => setMicro1(c.text)} aria-label={`Suggestion: ${c.text}`}>
+                {c.text} {c.from === 'void' && <span className="tag">from VOID</span>}
+              </button>
+            ))}
+            {microActChips.length === 0 && !chipsLoading && (
+              <span className="field-hint">Suggestions will appear after you use VOID</span>
+            )}
+          </div>
         </div>
-        <label htmlFor="micro1" className="text-sm">
-          Do you feel any moves or actions arising that feel like a direct expression of who you've become?
-          <span className="block text-xs text-ink-500 mt-1">
-            It's okay if nothing arises, let life respond to you.
-          </span>
-        </label>
-        <div className="input-panel">
-          <input id="micro1" value={micro1} onChange={(e) => setMicro1(e.target.value)} className="form-element" placeholder="Optional: one small act..." aria-label="Small act" />
-        </div>
-        <div className="flex flex-wrap gap-2 mt-1" role="group" aria-label="Suggestions">
-          {microActChips.map((c) => (
-            <button key={c.id} className="chip chip-suggestion" onClick={() => setMicro1(c.text)} aria-label={`Suggestion: ${c.text}`}>
-              {c.text} {c.from === 'void' && <span className="text-purple-500">(from VOID)</span>}
-            </button>
-          ))}
-          {microActChips.length === 0 && !chipsLoading && (
-            <span className="text-xs text-ink-500">Suggestions will appear after you use VOID</span>
+        <div className="grid gap-2">
+          <label htmlFor="fric" className="field-label"><span className="step-num mr-3">04</span>What's in the Way?</label>
+          <p className="field-hint" id="friction-help">
+            Name one thing you can allow yourself to do less of tomorrow to help your new way of being take root.
+          </p>
+          <div className="input-panel">
+            <input id="fric" value={friction} onChange={(e) => setFriction(e.target.value)} className="form-element" placeholder="Optional: one obstacle to reduce..." aria-label="Obstacle" aria-describedby="friction-help" />
+          </div>
+          {chipsLoading && <div className="field-hint italic">Loading suggestions...</div>}
+          {frictionChips.some(c => c.from === 'safety' || c.from === 'calibration') && (
+            <p className="field-hint mt-1">From earlier, you mentioned these obstacles:</p>
           )}
-        </div>
-        <label htmlFor="fric" className="text-sm font-medium">What's in the Way?</label>
-        <p className="text-xs text-ink-600 mb-1" id="friction-help">
-          Name one thing you can allow yourself to do less of tomorrow to help your new way of being take root.
-        </p>
-        <div className="input-panel">
-          <input id="fric" value={friction} onChange={(e) => setFriction(e.target.value)} className="form-element" placeholder="Optional: one obstacle to reduce..." aria-label="Obstacle" aria-describedby="friction-help" />
-        </div>
-        {chipsLoading && <div className="text-sm text-ink-600 italic">Loading suggestions...</div>}
-        {frictionChips.some(c => c.from === 'safety' || c.from === 'calibration') && (
-          <p className="text-xs text-ink-500 mt-2 mb-1">From earlier, you mentioned these obstacles:</p>
-        )}
-        <div className="flex flex-wrap gap-2">
-          {frictionChips.map((c) => (
-            <button key={c.id} className={`chip chip-suggestion ${c.from === 'safety' ? 'border-amber-400 bg-amber-50' : c.from === 'calibration' ? 'border-blue-300 bg-blue-50' : ''}`} onClick={() => setFriction(c.text)} aria-label={`Obstacle: ${c.text}${c.from ? ` (from ${c.from})` : ''}`}>
-              {c.text}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-2">
+            {frictionChips.map((c) => (
+              <button key={c.id} className={`chip chip-suggestion ${c.from ? 'chip--from' : ''}`} onClick={() => setFriction(c.text)} aria-label={`Obstacle: ${c.text}${c.from ? ` (from ${c.from})` : ''}`}>
+                {c.text}
+                {c.from && <span className="tag">{c.from === 'safety' ? 'Safety' : 'Grounding'}</span>}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Consolidated save buttons - reduced from 4 to 2 */}
-        <div className="flex gap-3 mt-4">
+        <div className="flex flex-wrap items-center gap-3 pt-2">
           <button
-            className="btn-flow disabled:opacity-50"
+            className="btn-flow btn-flow--primary"
             onClick={saveSpec}
             disabled={loading}
             aria-label="Save plan"
-            style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }}
           >
             {loading ? 'Saving…' : 'Save'}
           </button>
@@ -348,37 +362,37 @@ export default function Implementation() {
 
         {/* Secondary actions appear after save */}
         {status === 'Saved plan.' && (
-          <div className="flex gap-2 mt-3 p-3 bg-green-50 rounded-lg">
-            <span className="text-sm text-green-700">✓ Saved!</span>
+          <div className="flex flex-wrap items-center gap-3 p-3 rounded-xl bg-cobalt-50">
+            <span className="done-mark">✓ Saved!</span>
             <button className="btn-quiet" onClick={saveToCalendar}>Add to Calendar</button>
             <button className="btn-quiet" onClick={addReminder}>Set reminder</button>
           </div>
         )}
       </div>
 
-      <div className="grid gap-2">
-        <h2 className="font-semibold">Plans</h2>
-        <ul className="border rounded divide-y">
-          {specs.map((s) => (
-            <li key={s.id}>
-              <div className={`w-full p-3 ${selectedSpecId === s.id ? 'bg-bone-100' : ''}`}>
-                <button className="text-left" onClick={() => setSelectedSpecId(s.id)} aria-label={`Select plan ${s.label}`}>
-                  <div className="font-medium">{s.label}</div>
-                  <div className="text-sm text-ink-600">Principle: {s.principle}</div>
-                </button>
-                {/* IMP-2 progress dots */}
-                {Array.isArray(s.microActs) && s.microActs.length > 0 && (
-                  <div className="mt-1 text-[11px] text-ink-600" aria-label="Daily progress">
-                    {(s.microActs || []).map((act: string, i: number) => {
-                      const today = new Date().toDateString();
-                      const notes = specNotes[s.id] || [];
-                      const done = notes.some((n) => new Date(n.timestamp).toDateString() === today && n.action === `Completed: ${act}`);
-                      return <span key={i} className={`mr-1 ${done ? 'text-ink-900' : 'text-ink-300'}`}>{done ? '●' : '○'}</span>;
-                    })}
-                  </div>
-                )}
-                {/* IMP-3 repeat button */}
-                <div className="mt-2">
+      {specs.length > 0 && (
+        <div className="grid gap-3">
+          <h2 className="kicker">Plans</h2>
+          <ul className="grid gap-2">
+            {specs.map((s) => (
+              <li key={s.id}>
+                <div className={`plan-row ${selectedSpecId === s.id ? 'is-selected' : ''}`}>
+                  <button className="text-left w-full" onClick={() => setSelectedSpecId(s.id)} aria-label={`Select plan ${s.label}`}>
+                    <div className="font-medium">{s.label}</div>
+                    <div className="field-hint">Principle: {s.principle}</div>
+                  </button>
+                  {/* IMP-2 progress dots */}
+                  {Array.isArray(s.microActs) && s.microActs.length > 0 && (
+                    <div className="mt-1 flex gap-1" aria-label="Daily progress">
+                      {(s.microActs || []).map((act: string, i: number) => {
+                        const today = new Date().toDateString();
+                        const notes = specNotes[s.id] || [];
+                        const done = notes.some((n) => new Date(n.timestamp).toDateString() === today && n.action === `Completed: ${act}`);
+                        return <span key={i} className={`pixel ${done ? 'is-on' : ''}`} aria-hidden />;
+                      })}
+                    </div>
+                  )}
+                  {/* IMP-3 repeat button */}
                   <button
                     className="btn-quiet text-xs"
                     onClick={async () => {
@@ -392,29 +406,31 @@ export default function Implementation() {
                     Repeat
                   </button>
                 </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {status && status !== 'Saved plan.' && <p className="status-line" aria-live="polite">{status}</p>}
 
       {selectedSpec && (
-        <div className="grid gap-2">
-          <h3 className="font-semibold">Release Notes for “{selectedSpec.label}”</h3>
-          <div className="flex items-center gap-2">
+        <div className="panel">
+          <h3 className="panel-title">Release Notes for “{selectedSpec.label}”</h3>
+          <label className="flex items-center gap-2 field-hint">
             <input id="today-only" type="checkbox" checked={todayOnly} onChange={(e) => setTodayOnly(e.target.checked)} aria-label="Show today only" />
-            <label htmlFor="today-only" className="text-sm">Show today only</label>
-          </div>
+            Show today only
+          </label>
           {selectedSpec.microActs?.length ? (
-            <div className="grid gap-2 mb-2" aria-label="Today's micro-acts">
+            <div className="grid gap-3" aria-label="Today's micro-acts">
               {selectedSpec.microActs.map((act: string) => (
-                <div key={act} className="flex items-center gap-3 text-sm">
-                  <label className="flex items-center gap-2">
+                <div key={act} className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 flex-1 min-w-[12rem]">
                     <input type="checkbox" checked={isActDoneToday(act)} onChange={() => toggleAct(act)} aria-label={`Complete ${act}`} />
                     {act}
                   </label>
-                  <button className="btn-flow inline-flex items-center gap-2" style={{ background: 'var(--color-accent-organic)', color: 'white', borderColor: 'var(--color-accent-organic)' }} onClick={() => setActTimers((t) => ({ ...t, [act]: true }))} aria-label={`Start timer for ${act}`}><span aria-hidden>▶</span> Start 60s</button>
+                  {!actTimers[act] && (
+                    <button className="btn-flow" onClick={() => setActTimers((t) => ({ ...t, [act]: true }))} aria-label={`Start timer for ${act}`}>Start 60s</button>
+                  )}
                   {actTimers[act] && (
                     <Timer seconds={60} label={`${act} timer`} onDone={() => setActTimers((t) => ({ ...t, [act]: false }))} />
                   )}
@@ -426,7 +442,7 @@ export default function Implementation() {
             <div className="input-panel flex-1">
               <input value={newAct} onChange={(e) => setNewAct(e.target.value)} placeholder="Add micro-act" className="form-element" aria-label="New micro act" />
             </div>
-            <button className="btn-quiet" onClick={async () => {
+            <button className="btn-flow" onClick={async () => {
               if (!selectedSpecId || !newAct) return;
               const nextActs = [...(selectedSpec.microActs || []), newAct];
               await updateRuntimeSpecMicroActs(selectedSpecId, nextActs);
@@ -438,17 +454,30 @@ export default function Implementation() {
             <div className="input-panel flex-1">
               <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Logged action" className="form-element" aria-label="Release note input" />
             </div>
-            <button className="btn-quiet" onClick={addNote} aria-label="Add release note">Add</button>
+            <button className="btn-flow" onClick={addNote} aria-label="Add release note">Add</button>
           </div>
-          <ul className="list-disc pl-6">
-            {(todayOnly ? notesToday : notes).map((n) => (
-              <li key={n.id}>{new Date(n.timestamp).toLocaleString()}: {n.action}</li>
-            ))}
-          </ul>
+          {(todayOnly ? notesToday : notes).length > 0 && (
+            <ul className="saved-list">
+              {(todayOnly ? notesToday : notes).map((n) => (
+                <li key={n.id}>
+                  <div>
+                    <div>{n.action}</div>
+                    <div className="saved-meta">{new Date(n.timestamp).toLocaleString()}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
       {/* Audio integration removed */}
+      <SceneNext
+        links={[
+          { to: '/artifact/resets', label: 'Continue to Resets', primary: true },
+          { to: '/artifact/void', label: 'Take a pause in VOID' },
+        ]}
+      />
     </section>
   );
 }

@@ -1,72 +1,71 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArtifactNode } from './ArtifactNode';
-import { ArtifactArrow, ArrowheadMarker, pathFor, Point } from './ArtifactArrow';
-import { PixelArrowCanvas } from './PixelArrowCanvas';
-import { MotionPrefsProvider } from './MotionPrefsProvider';
-import {
-  artifactNodes,
-  artifactConnections
-} from '../../config/artifactFlow';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { artifactNodes, type ArtifactNode } from '../../config/artifactFlow';
+import { trackArtifactMapNavigate } from '../../lib/analytics';
 
-type Breakpoint = 'xs' | 'md' | 'lg' | 'xl';
+import safetySvg from '../../assets/safety.svg';
+import claritySvg from '../../assets/clarity.svg';
+import calibrationSvg from '../../assets/calibration.svg';
+import implementationSvg from '../../assets/implementation.svg';
+import breathingSvg from '../../assets/breathing.svg';
+import voidImage from '../../assets/VOID_1.webp';
 
-function useBreakpoint(): Breakpoint {
-  const [breakpoint, setBreakpoint] = useState<Breakpoint>('lg');
-
-  useEffect(() => {
-    const updateBreakpoint = () => {
-      if (window.innerWidth < 768) setBreakpoint('xs');
-      else if (window.innerWidth < 1024) setBreakpoint('md');
-      else if (window.innerWidth < 1440) setBreakpoint('lg');
-      else setBreakpoint('xl');
-    };
-
-    updateBreakpoint();
-    window.addEventListener('resize', updateBreakpoint);
-    return () => window.removeEventListener('resize', updateBreakpoint);
-  }, []);
-
-  return breakpoint;
+export interface Point {
+  x: number;
+  y: number;
 }
 
-interface ContainerSize {
-  width: number;
-  height: number;
-  containerRef: React.RefObject<HTMLDivElement>;
-}
+const art: Record<string, string> = {
+  safety: safetySvg,
+  clarity: claritySvg,
+  calibration: calibrationSvg,
+  implementation: implementationSvg,
+  resets: breathingSvg,
+  void: voidImage
+};
 
-function deg2rad(deg: number): number {
-  return (deg * Math.PI) / 180;
-}
+// Drawing space for the loop. Nodes are placed in percent of the same box.
+const SIZE = 1000;
+const C = SIZE / 2;
+const R = 360;
 
 export function polarToCartesian(cx: number, cy: number, radius: number, deg: number): Point {
-  const rad = deg2rad(deg - 90); // shift so 0° is at top
+  const rad = ((deg - 90) * Math.PI) / 180; // 0° is at the top
   return { x: cx + radius * Math.cos(rad), y: cy + radius * Math.sin(rad) };
 }
 
-function useContainerSize(): ContainerSize {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ width: 600, height: 600 });
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        setSize({ width, height });
-      }
-    });
-
-    resizeObserver.observe(containerRef.current);
-    return () => resizeObserver.disconnect();
-  }, []);
-
-  return { ...size, containerRef };
+function at(node: ArtifactNode): Point {
+  return node.isVoid || node.angle === undefined ? { x: C, y: C } : polarToCartesian(C, C, R, node.angle);
 }
 
+function arc(fromDeg: number, toDeg: number): string {
+  const a = polarToCartesian(C, C, R, fromDeg);
+  const b = polarToCartesian(C, C, R, toDeg);
+  return `M ${a.x} ${a.y} A ${R} ${R} 0 0 1 ${b.x} ${b.y}`;
+}
+
+function line(a: Point, b: Point): string {
+  return `M ${a.x} ${a.y} L ${b.x} ${b.y}`;
+}
+
+const byId = Object.fromEntries(artifactNodes.map((n) => [n.id, n])) as Record<string, ArtifactNode>;
+
+// The one path a person walks, drawn in the direction of travel so the stitches drift forward.
+const route = [
+  arc(0, 72),
+  arc(72, 144),
+  line(at(byId.calibration), at(byId.void)),
+  line(at(byId.void), at(byId.implementation)),
+  arc(216, 288),
+  arc(288, 360)
+];
+
+// VOID can be entered from anywhere: faint spokes from the steps the route doesn't already join.
+const spokes = ['safety', 'clarity', 'resets'].map((id) => line(at(byId[id]), at(byId.void)));
+
+function index(n: ArtifactNode) {
+  return String(n.stepIndex).padStart(2, '0');
+}
 
 interface ArtifactMapProps {
   className?: string;
@@ -74,158 +73,87 @@ interface ArtifactMapProps {
 
 export function ArtifactMap({ className = '' }: ArtifactMapProps) {
   const location = useLocation();
-  const breakpoint = useBreakpoint();
-  const { width, height, containerRef } = useContainerSize();
+  const [focusId, setFocusId] = useState('safety');
+  const focus = byId[focusId];
 
-  // Determine active node from current route
-  const currentPath = location.pathname;
-  const activeNodeId = currentPath.startsWith('/artifact/')
-    ? currentPath.split('/').pop() || 'safety'
-    : 'safety';
-
-  const [hoveredConnection, setHoveredConnection] = useState<{ from: string; to: string } | null>(null);
-
-  // Calculate responsive radius based on container size and breakpoint
-  const getRadius = () => {
-    const minDimension = Math.min(width, height);
-    switch (breakpoint) {
-      case 'xs': return minDimension * 0.30; // mobile: adjusted for larger icons
-      case 'md': return minDimension * 0.34;
-      case 'lg': return minDimension * 0.40;
-      case 'xl': return minDimension * 0.42;
-      default: return minDimension * 0.35;
-    }
+  const go = (node: ArtifactNode) => {
+    const from = location.pathname.split('/').pop() || null;
+    trackArtifactMapNavigate({ from, to: node.id, step_index: node.stepIndex, source: 'node' });
   };
 
-  const radius = getRadius();
-  const center = { x: width / 2, y: height / 2 };
-
-  // Calculate node positions
-  const nodePositions: Record<string, Point> = {};
-  artifactNodes.forEach(node => {
-    if (node.isVoid) {
-      nodePositions[node.id] = center;
-    } else if (node.angle !== undefined) {
-      nodePositions[node.id] = polarToCartesian(center.x, center.y, radius, node.angle);
-    }
-  });
-
-  // Prepare arrow data for canvas rendering
-  const canvasArrows = artifactConnections
-    .filter(conn => conn.enabled[breakpoint])
-    .map((connection) => {
-      const fromPos = nodePositions[connection.from];
-      const toPos = nodePositions[connection.to];
-      if (!fromPos || !toPos) return null;
-
-      const pathData = pathFor(fromPos, toPos, center);
-      return {
-        pathData,
-        fromPoint: fromPos,
-        toPoint: toPos
-      };
-    })
-    .filter(Boolean) as Array<{
-      pathData: string;
-      fromPoint: Point;
-      toPoint: Point;
-    }>;
-
   return (
-    <MotionPrefsProvider>
-      <div className={`relative mx-auto ${className}`}>
+    <div className={`flow-map ${className}`}>
+      <p className="scene-explainer text-center mx-auto">
+        This is your process map. Start with Safety, flow step by step, and return to VOID anytime you want to reset.
+      </p>
 
-        {/* Help Text */}
-        <div className="text-center text-sm text-ink-600 mb-4">
-          This is your process map. Start with Safety, flow step by step, and return to VOID anytime you want to reset.
-        </div>
+      {/* Wide screens: the loop beside a preview of the step under your hand */}
+      <div className="flow-map__wide">
+        <div className="flow-orbit">
+          <svg className="flow-orbit__lines" viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden>
+            <circle cx={C} cy={C} r={R} className="flow-orbit__ring" />
+            {spokes.map((d) => <path key={d} d={d} className="flow-orbit__spoke" />)}
+            {route.map((d) => <path key={d} d={d} className="flow-orbit__route" />)}
+          </svg>
 
-        {/* Radial Map Container */}
-        <div
-          ref={containerRef}
-          className="artifact-map-container"
-          style={
-            {
-              // Scale icon sizes with container width for broad browser compatibility
-              ['--artifact-node-size' as any]: `${Math.round(Math.max(72, Math.min(160, width * 0.20)))}px`,
-              ['--artifact-void-size' as any]: `${Math.round(Math.max(72, Math.min(160, width * 0.20)) * 1.8)}px`,
-            } as React.CSSProperties
-          }
-        >
-
-          {/* Nodes */}
           {artifactNodes.map((node) => {
-            const isActive = activeNodeId === node.id;
-            const isHighlighted = hoveredConnection && (hoveredConnection.from === node.id || hoveredConnection.to === node.id);
-            const position = nodePositions[node.id];
-
+            const p = at(node);
             return (
-              <div
+              <Link
                 key={node.id}
-                className="artifact-node"
-                data-id={node.id}
-                style={{ left: position.x, top: position.y }}
+                to={node.to}
+                aria-label={node.ariaLabel}
+                className={`orbit-node ${node.isVoid ? 'orbit-node--void' : ''} ${focusId === node.id ? 'is-focus' : ''}`}
+                style={{ left: `${(p.x / SIZE) * 100}%`, top: `${(p.y / SIZE) * 100}%` }}
+                onMouseEnter={() => setFocusId(node.id)}
+                onFocus={() => setFocusId(node.id)}
+                onClick={() => go(node)}
               >
-                <ArtifactNode
-                  node={node}
-                  isActive={isActive}
-                  isHighlighted={!!isHighlighted}
-                />
-              </div>
+                <span className="orbit-node__plate">
+                  <img src={art[node.id]} alt="" />
+                </span>
+                <span className="orbit-node__label">
+                  <span className="orbit-node__index">{index(node)}</span>
+                  {node.label}
+                </span>
+              </Link>
             );
           })}
-
-          {/* Canvas Overlay for Pixelated Arrows */}
-          <PixelArrowCanvas
-            width={width}
-            height={height}
-            arrows={canvasArrows}
-          />
-
-          {/* SVG Arrows (invisible but interactive) */}
-          <svg className="artifact-svg">
-            <ArrowheadMarker />
-            {artifactConnections
-              .filter(conn => conn.enabled[breakpoint])
-              .map((connection) => {
-                const fromPos = nodePositions[connection.from];
-                const toPos = nodePositions[connection.to];
-                if (!fromPos || !toPos) return null;
-
-                const pathData = pathFor(fromPos, toPos, center);
-
-                return (
-                  <ArtifactArrow
-                    key={`${connection.from}-${connection.to}`}
-                    connection={connection}
-                    pathData={pathData}
-                    pixel={true}
-                    onMouseEnter={() => setHoveredConnection({ from: connection.from, to: connection.to })}
-                    onMouseLeave={() => setHoveredConnection(null)}
-                  />
-                );
-              })}
-          </svg>
         </div>
 
-        {/* Flow Legend */}
-        <div className="text-center text-ink-600 text-sm mt-6">
-          <p className="mb-3">Tap any node to navigate. VOID anchors the flow.</p>
-          <div className="flex justify-center items-center gap-1 text-xs flex-wrap">
-            <span className="bg-slate-100 px-2 py-1 rounded">1. Safety</span>
-            <span className="text-slate-400">→</span>
-            <span className="bg-slate-100 px-2 py-1 rounded">2. Clarity</span>
-            <span className="text-slate-400">→</span>
-            <span className="bg-slate-100 px-2 py-1 rounded">3. Calibration</span>
-            <span className="text-slate-400">→</span>
-            <span className="bg-slate-100 px-2 py-1 rounded">4. VOID</span>
-            <span className="text-slate-400">→</span>
-            <span className="bg-slate-100 px-2 py-1 rounded">5. Implementation</span>
-            <span className="text-slate-400">→</span>
-            <span className="bg-slate-100 px-2 py-1 rounded">6. Resets</span>
-          </div>
-        </div>
+        <aside className="flow-preview" aria-live="polite">
+          <p className="kicker"><span className="kicker__index">{index(focus)}</span>/ 06</p>
+          <h2 className="scene-title flow-preview__title">{focus.label}</h2>
+          <p className="flow-preview__lead">{focus.lead}</p>
+          <Link to={focus.to} className="btn-flow btn-flow--primary justify-self-start" onClick={() => go(focus)}>
+            Open {focus.label}
+          </Link>
+          {focus.id === 'safety' && <p className="map-hint">Start here</p>}
+        </aside>
       </div>
-    </MotionPrefsProvider>
+
+      {/* Phones: the same route as a path you scroll down */}
+      <ol className="flow-path">
+        {artifactNodes.map((node) => (
+          <li key={node.id} className={node.isVoid ? 'is-void' : ''}>
+            <Link to={node.to} aria-label={node.ariaLabel} className="flow-path__row" onClick={() => go(node)}>
+              <span className="flow-path__plate">
+                <img src={art[node.id]} alt="" />
+              </span>
+              <span className="grid gap-1">
+                <span className="orbit-node__label">
+                  <span className="orbit-node__index">{index(node)}</span>
+                  {node.label}
+                  {node.id === 'safety' && <span className="map-hint">Start here</span>}
+                </span>
+                <span className="flow-path__lead">{node.lead}</span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+
+      <p className="field-hint text-center">Tap any node to navigate. VOID anchors the flow.</p>
+    </div>
   );
 }

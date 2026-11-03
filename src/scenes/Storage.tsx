@@ -151,41 +151,42 @@ export default function StorageReveal() {
   }
 
   return (
-    <section className="grid gap-4">
-      <header className="grid gap-2">
-        <h1 className="text-2xl font-bold font-humanist">Manage your saved guides</h1>
-        <p className="text-ink-700 text-sm">Keep, download, or remove versions of your guide. Everything you save stays private on your device unless you choose to export it.</p>
-        <div className="p-4 bg-bone-50 rounded-lg text-sm text-ink-700">
+    <section className="scene">
+      <header className="scene-plate__text pb-6 border-b border-ink-200">
+        <p className="kicker">Storage</p>
+        <h1 className="scene-title">Manage your saved guides</h1>
+        <p className="scene-lead">Keep, download, or remove versions of your guide. Everything you save stays private on your device unless you choose to export it.</p>
+        <div className="scene-explainer">
           Storage is the mirror of your becoming. Every piece of evidence, principle, and action you save here turns into a library of you. When you revisit it, you'll see patterns: traits that keep circling back, shifts that spark the biggest changes, proof that your identity is evolving over time.
           {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
         </div>
       </header>
-      <p className="text-ink-700">Download or restore your saved copies. Everything stays on your device.</p>
+      <p className="panel-text">Download or restore your saved copies. Everything stays on your device.</p>
       <div className="flex gap-3 flex-wrap items-center">
-        <button className="px-4 py-2 border rounded" onClick={handleExport} aria-label="Download a copy">Download a copy</button>
+        <button className="btn-flow" onClick={handleExport} aria-label="Download a copy">Download a copy</button>
         <InlineHelp>Downloads a backup file (JSON) of your data. Keep it private. You can restore it later with “Upload a saved copy”.</InlineHelp>
-        <label className="px-4 py-2 border rounded cursor-pointer" aria-label="Upload a saved copy">
+        <label className="btn-flow cursor-pointer" aria-label="Upload a saved copy">
           Upload a saved copy
           <input type="file" accept="application/json" className="sr-only" onChange={handleImport} />
         </label>
         <InlineHelp>Restores a backup you previously downloaded. It replaces current data with what’s in the file.</InlineHelp>
-        <button className="px-4 py-2 border rounded" onClick={handleExportCSV} aria-label="Download spreadsheet">Download Spreadsheet</button>
+        <button className="btn-flow" onClick={handleExportCSV} aria-label="Download spreadsheet">Download Spreadsheet</button>
         <InlineHelp>Exports your entries as a spreadsheet. Good for analysis in Sheets or Excel.</InlineHelp>
-        <button className="px-4 py-2 border rounded" onClick={() => { setShowDeleteModal(true); setConfirmDeleteText(''); }} aria-label="Delete all data">Delete all data</button>
+        <button className="btn-flow" onClick={() => { setShowDeleteModal(true); setConfirmDeleteText(''); }} aria-label="Delete all data">Delete all data</button>
         <InlineHelp>Removes everything saved on this device. This cannot be undone. Use only if you’re sure.</InlineHelp>
       </div>
-      <details className="grid gap-2">
-        <summary className="font-semibold cursor-pointer select-none">Advanced options</summary>
-        <div className="flex items-center gap-2 flex-wrap mt-2">
+      <details className="disclosure">
+        <summary>Advanced options</summary>
+        <div className="flex items-center gap-2 flex-wrap px-5 pb-5">
           <InlineHelp>Developer tools for exporting/importing specific tables. Most people don’t need this.</InlineHelp>
           <label htmlFor="table" className="text-sm">Table</label>
-          <select id="table" className="border p-2 rounded" value={table} onChange={(e) => setTable(e.target.value)} aria-label="Choose table">
+          <select id="table" className="field-input" value={table} onChange={(e) => setTable(e.target.value)} aria-label="Choose table">
             {db.tables.filter(t => t.name !== 'audio').map((t) => (
               <option key={t.name} value={t.name}>{t.name}</option>
             ))}
           </select>
           <InlineHelp>Select which internal table to export/import. Changes here affect only that table.</InlineHelp>
-          <button className="px-3 py-2 border rounded" onClick={async () => {
+          <button className="btn-flow" onClick={async () => {
             const arr = await db.table(table).toArray();
             const blob = new Blob([JSON.stringify(arr)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -196,7 +197,7 @@ export default function StorageReveal() {
             URL.revokeObjectURL(url);
           }} aria-label="Export selected table">Export table (JSON)</button>
           <InlineHelp>Downloads only the selected table as JSON. Useful for debugging or partial backups.</InlineHelp>
-          <label className="px-3 py-2 border rounded cursor-pointer" aria-label="Import selected table">
+          <label className="btn-flow cursor-pointer" aria-label="Import selected table">
             Import table (JSON)
             <input type="file" accept="application/json" className="sr-only" onChange={async (e) => {
               const file = e.target.files?.[0];
@@ -214,7 +215,7 @@ export default function StorageReveal() {
         </div>
       </details>
       <div>
-        <h2 className="font-semibold mt-2">Your Practice History</h2>
+        <h2 className="panel-title mt-2">Your Practice History</h2>
         <ul className="text-sm text-ink-700 grid grid-cols-2 sm:grid-cols-3 gap-x-6">
           {Object.entries(counts)
             .filter(([name]) => !['embeddings', 'audio'].includes(name))
@@ -231,20 +232,20 @@ export default function StorageReveal() {
               return (
                 <li key={name}>
                   {friendlyNames[name] || name}: {count}
-                  <span className="text-slate-500 text-xs ml-1">({lastText})</span>
+                  <span className="text-ink-500 text-xs ml-1">({lastText})</span>
                 </li>
               );
             })}
         </ul>
-        <p className="text-sm text-ink-600 mt-2">Last modified: {lastModified}</p>
+        <p className="saved-meta mt-2">Last modified: {lastModified}</p>
       </div>
       {/* STG-1 Filters */}
-      <div className="grid gap-2 border rounded p-3">
-        <h2 className="font-semibold">Filter by trait or date</h2>
+      <div className="panel">
+        <h2 className="panel-title">Filter by trait or date</h2>
         <div className="flex flex-wrap gap-3 items-end">
           <div className="grid">
             <label className="text-sm" htmlFor="trait">Trait</label>
-            <select id="trait" className="border p-2 rounded min-w-[160px]" value={traitFilter} onChange={(e) => setTraitFilter(e.target.value)} aria-label="Trait filter">
+            <select id="trait" className="field-input min-w-[160px]" value={traitFilter} onChange={(e) => setTraitFilter(e.target.value)} aria-label="Trait filter">
               <option value="">All traits</option>
               {traitOptions.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -253,44 +254,44 @@ export default function StorageReveal() {
           </div>
           <div className="grid">
             <label className="text-sm" htmlFor="from">From</label>
-            <input id="from" type="date" className="border p-2 rounded" value={fromDate} onChange={(e) => setFromDate(e.target.value)} aria-label="From date" />
+            <input id="from" type="date" className="field-input" value={fromDate} onChange={(e) => setFromDate(e.target.value)} aria-label="From date" />
           </div>
           <div className="grid">
             <label className="text-sm" htmlFor="to">To</label>
-            <input id="to" type="date" className="border p-2 rounded" value={toDate} onChange={(e) => setToDate(e.target.value)} aria-label="To date" />
+            <input id="to" type="date" className="field-input" value={toDate} onChange={(e) => setToDate(e.target.value)} aria-label="To date" />
           </div>
           <div className="grid">
             <label className="text-sm" htmlFor="group">Group by</label>
-            <select id="group" className="border p-2 rounded" value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)} aria-label="Group by">
+            <select id="group" className="field-input" value={groupBy} onChange={(e) => setGroupBy(e.target.value as any)} aria-label="Group by">
               <option value="none">None</option>
               <option value="trait">Trait</option>
               <option value="date">Date</option>
             </select>
           </div>
           {(traitFilter || fromDate || toDate) && (
-            <button className="px-3 py-2 border rounded" onClick={() => { setTraitFilter(''); setFromDate(''); setToDate(''); }} aria-label="Clear filters">Clear</button>
+            <button className="btn-flow" onClick={() => { setTraitFilter(''); setFromDate(''); setToDate(''); }} aria-label="Clear filters">Clear</button>
           )}
         </div>
       </div>
       {/* STG-2 Enhanced Storage Display */}
       <div className="grid gap-3">
-        <h2 className="font-semibold">Evidence</h2>
+        <h2 className="panel-title">Evidence</h2>
         {traitFilter && (
           <p className="text-sm text-ink-600">{filteredContexts.length} items tagged '{traitFilter}'</p>
         )}
         {Object.entries(groupedContexts).map(([group, items]) => (
           <div key={group} className="grid gap-1">
             {groupBy !== 'none' && <div className="text-xs font-medium text-ink-500 mt-2">{group}</div>}
-            <ul className="divide-y border rounded">
+            <ul className="saved-list">
               {items.map((c: any) => (
-                <li key={c.id} className="p-2 text-sm flex items-start gap-2">
-                  <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">{c.type}</span>
+                <li key={c.id} className="text-sm">
+                  <span className="tag">{c.type}</span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span>{c.label}</span>
-                      {c.trait && <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[11px]">{c.trait}</span>}
+                      {c.trait && <span className="tag">{c.trait}</span>}
                     </div>
-                    <div className="text-[11px] text-ink-500">{timeAgo(c.created_at)}</div>
+                    <div className="saved-meta">{timeAgo(c.created_at)}</div>
                   </div>
                 </li>
               ))}
@@ -299,26 +300,26 @@ export default function StorageReveal() {
         ))}
       </div>
       <div className="grid gap-3">
-        <h2 className="font-semibold">Plans</h2>
-        <ul className="divide-y border rounded">
+        <h2 className="panel-title">Plans</h2>
+        <ul className="saved-list">
           {filteredSpecs.map((s: any) => (
-            <li key={s.id} className="p-2 text-sm">
+            <li key={s.id} className="text-sm grid">
               <div className="font-medium">{s.label}</div>
               <div className="text-ink-600">Principle: {s.principle}</div>
-              <div className="text-[11px] text-ink-500">{timeAgo(s.created_at)}</div>
+              <div className="saved-meta">{timeAgo(s.created_at)}</div>
             </li>
           ))}
         </ul>
       </div>
-      {status && <p className="text-sm text-ink-600" aria-live="polite">{status}</p>}
+      {status && <p className="status-line" aria-live="polite">{status}</p>}
 
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 grid gap-3">
+        <div className="fixed inset-0 z-50 bg-ink-900/50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+          <div className="panel max-w-md w-full" style={{ background: 'var(--paper-raised)' }}>
             <h2 id="delete-title" className="text-lg font-semibold">Delete all data?</h2>
             <p className="text-sm text-ink-700">This permanently deletes everything saved on this device. Type DELETE to confirm.</p>
             <input
-              className="border p-2 rounded"
+              className="field-input"
               value={confirmDeleteText}
               onChange={(e) => setConfirmDeleteText(e.target.value)}
               placeholder="Type DELETE"
@@ -326,9 +327,9 @@ export default function StorageReveal() {
               autoFocus
             />
             <div className="flex gap-2 justify-end mt-2">
-              <button className="px-3 py-2 border rounded" onClick={() => setShowDeleteModal(false)} aria-label="Cancel delete">Cancel</button>
+              <button className="btn-flow" onClick={() => setShowDeleteModal(false)} aria-label="Cancel delete">Cancel</button>
               <button
-                className="px-3 py-2 border rounded bg-red-600 text-white disabled:opacity-50"
+                className="btn-flow" style={{ background: '#9b2c1f', borderColor: '#9b2c1f', color: '#fff' }}
                 disabled={confirmDeleteText !== 'DELETE'}
                 onClick={async () => { await handleClear(); setShowDeleteModal(false); }}
                 aria-label="Confirm delete all data"

@@ -15,28 +15,24 @@ import FlowMap from './components/FlowMap';
 import { ArtifactMap } from './components/artifact/ArtifactMap';
 import FlowProgressNav, { FlowProgressNavCompact } from './components/FlowProgressNav';
 
-// Animation variants for page transitions
+// Page transitions settle in place: a short fade, no blur.
 export const pageVariants = {
   initial: {
     opacity: 0,
-    y: 8,
-    filter: 'blur(4px)'
+    y: 6
   },
   enter: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: {
-      duration: 0.6,
+      duration: 0.36,
       ease: [0.25, 0.1, 0.25, 1],
     }
   },
   exit: {
     opacity: 0,
-    y: -4,
-    filter: 'blur(2px)',
     transition: {
-      duration: 0.4,
+      duration: 0.18,
       ease: [0.25, 0.1, 0.25, 1],
     }
   }
@@ -66,38 +62,41 @@ export const itemVariants = {
   }
 };
 
+function ExtraLinks({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <div className="site-nav flow-nav-extras">
+      <Link to="/artifact/resets" onClick={onNavigate}>Resets</Link>
+      <Link to="/artifact/faq" onClick={onNavigate}>FAQ</Link>
+      <Link to="/artifact/storage" onClick={onNavigate}>Storage</Link>
+    </div>
+  );
+}
+
 function Header() {
   const location = useLocation();
   const isArtifact = location.pathname.startsWith('/artifact');
+  const isText = location.pathname.startsWith('/text');
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="border-b border-slate-300 bg-bone-50 sticky top-0 z-10">
-      {/* Main nav row */}
-      <div className="px-3 sm:px-4 py-2 flex items-center gap-3 text-ink-800">
-        <Link className="font-bold text-sm" to="/">TJG</Link>
-        <span className="text-slate-300">|</span>
-        <div className="flex items-center gap-2 text-sm">
-          <Link to="/text" className="text-ink-600 hover:text-ink-900 transition-colors" aria-label="Text Guide">Text</Link>
-          <Link to="/artifact" className="text-ink-600 hover:text-ink-900 transition-colors" aria-label="Digital TLJ Home">Flow</Link>
-        </div>
+    <header className="site-header">
+      <div className="site-header__row">
+        <Link className="wordmark" to="/">TJG</Link>
+        <nav className="site-nav" aria-label="Guide">
+          <Link to="/text" aria-label="Text Guide" aria-current={isText ? 'page' : undefined}>Text</Link>
+          <Link to="/artifact" aria-label="Digital TLJ Home" aria-current={location.pathname === '/artifact' ? 'page' : undefined}>Flow</Link>
+        </nav>
 
-        {/* Desktop: Flow progress nav */}
+        {/* Desktop: extra pages sit at the right of the top row */}
         {isArtifact && (
           <div className="hidden sm:flex items-center ml-auto">
-            <FlowProgressNav />
-            <span className="mx-2 text-slate-300">|</span>
-            <div className="flex items-center gap-2 text-xs text-ink-500">
-              <Link to="/artifact/resets" className="hover:text-ink-700 transition-colors">Resets</Link>
-              <Link to="/artifact/faq" className="hover:text-ink-700 transition-colors">FAQ</Link>
-              <Link to="/artifact/storage" className="hover:text-ink-700 transition-colors">Storage</Link>
-            </div>
+            <ExtraLinks />
           </div>
         )}
 
         {/* Mobile menu toggle */}
         <button
-          className="ml-auto sm:hidden px-2 py-1.5 text-xs border border-slate-300 rounded min-h-[36px]"
+          className="menu-toggle sm:hidden"
           onClick={() => setMenuOpen((v) => !v)}
           aria-expanded={menuOpen}
           aria-label="Toggle menu"
@@ -106,34 +105,33 @@ function Header() {
         </button>
       </div>
 
+      {/* Desktop: the flow, step by step */}
+      {isArtifact && (
+        <div className="site-header__flow hidden sm:flex">
+          <FlowProgressNav />
+        </div>
+      )}
+
       {/* Mobile: Flow progress indicator (always visible when in artifact) */}
       {isArtifact && !menuOpen && (
-        <div className="sm:hidden border-t border-slate-200 bg-bone-50">
+        <div className="sm:hidden">
           <FlowProgressNavCompact />
         </div>
       )}
 
       {/* Mobile menu expanded */}
       {menuOpen && (
-        <div className="sm:hidden border-t border-slate-200 bg-bone-50 p-3">
-          <div className="grid gap-3">
-            <div className="flex items-center gap-4 text-sm">
-              <Link to="/text" onClick={() => setMenuOpen(false)} className="text-ink-700">Text Guide</Link>
-              <Link to="/artifact" onClick={() => setMenuOpen(false)} className="text-ink-700">Flow Map</Link>
-            </div>
-            {isArtifact && (
-              <>
-                <div className="border-t border-slate-100 pt-3">
-                  <FlowProgressNavCompact onNavigate={() => setMenuOpen(false)} />
-                </div>
-                <div className="flex items-center justify-center gap-4 text-xs text-ink-500 pt-2 border-t border-slate-100">
-                  <Link to="/artifact/resets" onClick={() => setMenuOpen(false)}>Resets</Link>
-                  <Link to="/artifact/faq" onClick={() => setMenuOpen(false)}>FAQ</Link>
-                  <Link to="/artifact/storage" onClick={() => setMenuOpen(false)}>Storage</Link>
-                </div>
-              </>
-            )}
-          </div>
+        <div className="menu-sheet sm:hidden">
+          <nav className="site-nav" aria-label="Guide (menu)">
+            <Link to="/text" onClick={() => setMenuOpen(false)}>Text Guide</Link>
+            <Link to="/artifact" onClick={() => setMenuOpen(false)}>Flow Map</Link>
+          </nav>
+          {isArtifact && (
+            <>
+              <FlowProgressNavCompact onNavigate={() => setMenuOpen(false)} />
+              <ExtraLinks onNavigate={() => setMenuOpen(false)} />
+            </>
+          )}
         </div>
       )}
     </header>
@@ -144,9 +142,9 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen text-ink-900 overflow-x-hidden">
+    <div className="min-h-screen overflow-x-hidden">
       <Header />
-      <main className="max-w-3xl mx-auto px-3 sm:px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-24 sm:pt-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -158,7 +156,7 @@ export default function App() {
             <Routes location={location}>
               <Route path="/" element={<ModeSelector />} />
               <Route path="/text" element={<TextOnlyReader />} />
-              <Route path="/artifact" element={<section className="grid gap-3"><h1 className="text-2xl font-bold doto-base doto-700 text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
+              <Route path="/artifact" element={<section className="flow-page"><h1 className="scene-title text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
               <Route path="/artifact/safety" element={<Safety />} />
               <Route path="/artifact/clarity" element={<Clarity />} />
               <Route path="/artifact/void" element={<VOIDScene />} />

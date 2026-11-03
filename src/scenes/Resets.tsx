@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { listEntries } from '../storage/storage';
+import { ScenePlate } from '../components/ScenePlate';
+import BreathingIllustration from '../assets/breathing.svg?react';
 
 const STRAIN_WORDS = ['stuck', 'hard', 'difficult', 'strain', 'tired', 'overwhelm'];
 
@@ -35,71 +37,60 @@ export default function Resets() {
   }
 
   return (
-    <section className="grid gap-6">
-      <header className="grid gap-2">
-        <h1 className="text-2xl font-bold font-humanist">Resets</h1>
-        <p className="text-ink-700 text-sm">When things feel off, Resets bring you back gently.</p>
-        <div className="section-card text-sm text-ink-700">
-          Some days you'll drift. That's part of the rhythm. Resets don't erase progress; they re-align you with what's alive now. If something feels too far, shrink the step. If your system feels heavy, drop into VOID. If you're unsure, hold onto one small piece of proof and let it carry you forward.
-          {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
-        </div>
-      </header>
-      <div className="grid gap-4">
-        <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-3">
-          {/* Halve the distance card */}
-          <button
-            onClick={navigateToClarity}
-            className={`p-6 border-2 rounded-lg text-left hover:shadow-lg transition-all cursor-pointer ${highlightHalve
-                ? 'border-amber-400 bg-amber-50 shadow-md'
-                : 'border-slate-200 hover:border-slate-300'
-              }`}
-            aria-label="Go to Clarity with gentler trait suggestions"
-          >
-            <div className="grid gap-3">
-              <h3 className="text-lg font-semibold text-ink-800">Halve the distance</h3>
-              <p className="text-sm text-ink-600">
-                Choose a version that feels 50% closer and rehearse for 30–60s.
-              </p>
-              <div className="text-xs text-purple-600 font-medium">
-                → Opens Clarity with gentler suggestions
-              </div>
-            </div>
-          </button>
+    <section className="scene">
+      <ScenePlate
+        index="06"
+        kicker="/ 06"
+        title="Resets"
+        lead="When things feel off, Resets bring you back gently."
+        art={<BreathingIllustration />}
+        artLabel="Resets illustration"
+      >
+        Some days you'll drift. That's part of the rhythm. Resets don't erase progress; they re-align you with what's alive now. If something feels too far, shrink the step. If your system feels heavy, drop into VOID. If you're unsure, hold onto one small piece of proof and let it carry you forward.
+        {/* TODO: Reference path for future copy: docs/Updates/Explainers */}
+      </ScenePlate>
+      <div className="scene-wide grid gap-3 lg:grid-cols-3">
+        {/* Halve the distance card */}
+        <button
+          onClick={navigateToClarity}
+          className={`reset-card ${highlightHalve ? 'is-suggested' : ''}`}
+          aria-label="Go to Clarity with gentler trait suggestions"
+        >
+          <span className="kicker"><span className="kicker__index">A</span>Clarity</span>
+          <h3 className="reset-card__title">Halve the distance</h3>
+          <p className="reset-card__text">
+            Choose a version that feels 50% closer and rehearse for 30–60s.
+          </p>
+          <span className="reset-card__go">Opens Clarity with gentler suggestions</span>
+        </button>
 
-          {/* Rest & VOID card */}
-          <button
-            onClick={navigateToVOID}
-            className="p-6 border-2 border-slate-200 rounded-lg text-left hover:border-slate-300 hover:shadow-lg transition-all cursor-pointer"
-            aria-label="Go to VOID with timer pre-started"
-          >
-            <div className="grid gap-3">
-              <h3 className="text-lg font-semibold text-ink-800">Rest & VOID</h3>
-              <p className="text-sm text-ink-600">
-                Pause. Drop into VOID to neutral. Return when you feel spacious.
-              </p>
-              <div className="text-xs text-purple-600 font-medium">
-                → Opens VOID with timer ready to start
-              </div>
-            </div>
-          </button>
+        {/* Rest & VOID card */}
+        <button
+          onClick={navigateToVOID}
+          className="reset-card reset-card--dark"
+          aria-label="Go to VOID with timer pre-started"
+        >
+          <span className="kicker"><span className="kicker__index">B</span>VOID</span>
+          <h3 className="reset-card__title">Rest & VOID</h3>
+          <p className="reset-card__text">
+            Pause. Drop into VOID to neutral. Return when you feel spacious.
+          </p>
+          <span className="reset-card__go">Opens VOID with timer ready to start</span>
+        </button>
 
-          {/* Hold onto proof card */}
-          <button
-            onClick={navigateToCalibration}
-            className="p-6 border-2 border-slate-200 rounded-lg text-left hover:border-slate-300 hover:shadow-lg transition-all cursor-pointer"
-            aria-label="Go to Calibration with proof field focused"
-          >
-            <div className="grid gap-3">
-              <h3 className="text-lg font-semibold text-ink-800">Hold onto what's already true</h3>
-              <p className="text-sm text-ink-600">
-                Name one ordinary place you're already being this way. Let it feel mundane.
-              </p>
-              <div className="text-xs text-purple-600 font-medium">
-                → Opens Grounding with proof field focused
-              </div>
-            </div>
-          </button>
-        </div>
+        {/* Hold onto proof card */}
+        <button
+          onClick={navigateToCalibration}
+          className="reset-card"
+          aria-label="Go to Calibration with proof field focused"
+        >
+          <span className="kicker"><span className="kicker__index">C</span>Grounding</span>
+          <h3 className="reset-card__title">Hold onto what's already true</h3>
+          <p className="reset-card__text">
+            Name one ordinary place you're already being this way. Let it feel mundane.
+          </p>
+          <span className="reset-card__go">Opens Grounding with proof field focused</span>
+        </button>
       </div>
     </section>
   );

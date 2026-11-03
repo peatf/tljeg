@@ -68,34 +68,16 @@ export default function VoidLabel({
     return base;
   };
 
-  const getVariantClasses = () => {
-    switch (variant) {
-      case 'orb':
-        return 'bg-stone-100 border border-stone-200 rounded-full px-5 py-2 shadow-sm backdrop-blur-sm';
-      case 'fragment':
-        return 'bg-zinc-50 border-l-4 border-l-stone-400 px-4 py-2 shadow-sm transform -skew-x-1';
-      case 'glitch':
-        return 'bg-neutral-100 border border-dashed border-stone-300 px-4 py-2 font-mono tracking-wide';
-      default:
-        return 'bg-stone-50 border border-stone-200 rounded-sm px-3 py-2';
-    }
-  };
-
   return (
     <div
         style={getStyles()}
-        className={`
-          relative inline-flex items-center gap-2 text-sm font-medium cursor-pointer
-          hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out
-          ${getVariantClasses()}
-          ${isDissolving ? 'pointer-events-none' : ''}
-        `}
+        className={`void-label void-label--${variant} ${isDissolving ? 'pointer-events-none' : ''}`}
       >
-        <span className="text-stone-700 select-none">{text}</span>
+        <span className="select-none">{text}</span>
         {onRemove && !isDissolving && (
-          <button 
+          <button
             onClick={onRemove}
-            className="text-stone-500 hover:text-stone-700 text-lg leading-none ml-1"
+            className="void-label__remove"
             aria-label={`Remove ${text}`}
           >
             ×
