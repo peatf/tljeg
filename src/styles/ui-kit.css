@@ -2552,28 +2552,64 @@ a {
   padding: 0 1.5rem;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: clamp(2.4rem, 9vw, 4.75rem);
-  line-height: 1;
+  font-size: clamp(2.6rem, 12vw, 4.75rem);
+  line-height: 1.05;
   text-align: center;
-  color: var(--ink);
-  opacity: 0.35;
-  transition: opacity 1.6s ease, color 1.6s ease;
+  letter-spacing: 0.02em;
+  /* Unlit word at rest; ink rises through it from the bottom as the time passes */
+  background-image: linear-gradient(to top, var(--accent) 50%, rgba(34, 35, 31, 0.2) 50%);
+  background-size: 100% 200%;
+  background-position: 0 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transform: scale(1);
+  transition: letter-spacing 6s ease-in-out, transform 6s ease-in-out;
+}
+
+/* In-breath: the word widens and lifts. The out-breath (6s) lets it settle back. */
+.jump-word.is-in {
+  letter-spacing: 0.14em;
+  transform: scale(1.06);
+  transition-duration: 4s;
 }
 
 .jump-embody.is-running .jump-word {
-  opacity: 1;
-  color: var(--accent);
-  animation: jumpBreathe 8s ease-in-out infinite;
+  animation: jumpFill 45s linear forwards;
 }
 
 .jump-embody.is-done .jump-word {
-  opacity: 1;
-  color: var(--ink);
+  background-position: 0 100%;
 }
 
-@keyframes jumpBreathe {
-  0%, 100% { transform: scale(0.97); }
-  50% { transform: scale(1.03); }
+@keyframes jumpFill {
+  to { background-position: 0 100%; }
+}
+
+.jump-embody__time {
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
+
+.jump-embody .scan-cue {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.jump-direction {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 12px;
+  background: var(--void);
+  color: var(--void-ink);
+  line-height: 1.55;
+}
+
+.jump-direction .kicker {
+  color: var(--void-ink-3);
 }
 
 .jump-labels {
@@ -2635,7 +2671,50 @@ a {
 
 .jump-hold__labels {
   display: grid;
-  gap: 1rem;
+  gap: 1.6rem;
+  max-width: calc(100vw - 32px);
+}
+
+.jump-hold__direction {
+  min-height: 1.5em;
+}
+
+/* VOID: the word comes apart into letters, then each letter dissolves */
+.drift-word {
+  /* Letters spread up to 1.1em apart, less when the longest word would leave the screen */
+  --spread: max(0.1em, min(1.1em, calc((min(100vw, 40rem) - 64px) / var(--n) - 0.62em)));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 0.6em;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 6vw, 2.25rem);
+  color: var(--void-ink);
+  letter-spacing: 0;
+  animation: driftApart 34s ease-in-out var(--delay) forwards;
+}
+
+.drift-group {
+  white-space: nowrap;
+}
+
+.drift-letter {
+  display: inline-block;
+  animation: letterDissolve 42s ease-in calc(var(--delay) + 34s + var(--lag)) forwards;
+}
+
+@keyframes driftApart {
+  to { letter-spacing: var(--spread); }
+}
+
+@keyframes letterDissolve {
+  to {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+    filter: blur(5px);
+  }
 }
 
 .jump-hold .void-timer {
@@ -2674,6 +2753,25 @@ a {
 @media (prefers-reduced-motion: reduce) {
   .jump-embody.is-running .jump-word {
     animation: none;
+    background-position: 0 100%;
+  }
+
+  .jump-word.is-in {
+    letter-spacing: 0.02em;
+    transform: none;
+  }
+
+  /* Without motion the words stay whole and simply fade */
+  .drift-word {
+    animation: none;
+  }
+
+  .drift-letter {
+    animation: letterFade 40s linear calc(var(--delay) + 30s) forwards;
+  }
+
+  @keyframes letterFade {
+    to { opacity: 0; }
   }
 
   .jump-word,

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { Link } from 'react-router-dom';
 import BodyScan from '../components/BodyScan';
-import DissolveWord from '../components/DissolveWord';
+import EmbodyWord from '../components/EmbodyWord';
+import LetterDrift from '../components/LetterDrift';
 import Timer from '../components/Timer';
 import { ChipList } from '../components/Chips';
 import { STARTER_TRAITS } from '../config/traits';
@@ -15,6 +16,9 @@ const ORDER: Step[] = ['arrive', 'safety', 'scan', 'character', 'embody', 'overl
 
 const ENV_OPTIONS = ['Door locked', 'Water nearby', 'Warmth', 'Low light', 'Phone silent'];
 const HOLD_SECONDS = 90;
+// When the letters have drifted apart, and when they have dissolved (see LetterDrift).
+const LETTERS_APART_AT = 34;
+const LETTERS_GONE_AT = 84;
 
 type LastJump = { trait: string | null; overlap: string; timestamp: number };
 
@@ -34,12 +38,12 @@ export default function Jump() {
   const [trait, setTrait] = useState<string | null>(null);
   const [ownTrait, setOwnTrait] = useState('');
   const [embodied, setEmbodied] = useState(false);
-  const [embodying, setEmbodying] = useState(false);
   const [overlap, setOverlap] = useState('');
   const [labelInput, setLabelInput] = useState('');
   const [labels, setLabels] = useState<string[]>([]);
   const [holdStart, setHoldStart] = useState(0);
   const [holdSeconds, setHoldSeconds] = useState(0);
+  const [holdElapsed, setHoldElapsed] = useState(0);
   const [held, setHeld] = useState(false);
   const [action, setAction] = useState('');
 
@@ -62,6 +66,12 @@ export default function Jump() {
       setPastOverlaps(texts.map((t) => ({ id: `ov:${t}`, text: String(t), source: 'user' as const })));
     });
   }, []);
+
+  useEffect(() => {
+    if (step !== 'hold') return;
+    const id = window.setInterval(() => setHoldElapsed(Math.floor((Date.now() - holdStart) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, [step, holdStart]);
 
   // Escape leaves the hold, with no confirmation to break the mood.
   useEffect(() => {
@@ -104,6 +114,7 @@ export default function Jump() {
 
   function startHold() {
     setHeld(false);
+    setHoldElapsed(0);
     setHoldStart(Date.now());
     setStep('hold');
   }
@@ -151,6 +162,13 @@ export default function Jump() {
     setStep('done');
   }
 
+  function holdDirection(): string {
+    if (held) return 'Hang out in this sensation as long as you want.';
+    if (labels.length > 0 && holdElapsed < LETTERS_APART_AT) return 'Let each word become just letters.';
+    if (labels.length > 0 && holdElapsed < LETTERS_GONE_AT) return 'Let the letters dissolve.';
+    return 'In the void there is only the present, only awareness.';
+  }
+
   // The VOID hold takes the whole room.
   if (step === 'hold') {
     return (
@@ -160,17 +178,15 @@ export default function Jump() {
         </p>
         <div className="jump-hold__center">
           <h1 id="jump-hold-title" ref={titleRef} tabIndex={-1} className="sr-only">VOID hold</h1>
-          {labels.length > 0 ? (
+          {labels.length > 0 && (
             <div className="jump-hold__labels">
               {labels.map((label, i) => (
-                <DissolveWord key={`${label}-${i}`} text={label} delay={i * 300} />
+                <LetterDrift key={`${label}-${i}`} text={label} delay={i * 1.5} />
               ))}
             </div>
-          ) : (
-            <p className="void-heading text-xl">In the void there is only the present, only awareness.</p>
           )}
+          <p className="void-subheading jump-hold__direction" aria-live="polite">{holdDirection()}</p>
           {!held && <Timer seconds={HOLD_SECONDS} label="VOID hold" className="void-timer" onDone={() => setHeld(true)} />}
-          {held && <p className="void-subheading">Hang out in this sensation as long as you want.</p>}
         </div>
         <div className="jump-hold__actions">
           {held ? (
@@ -372,26 +388,7 @@ export default function Jump() {
           title={trait ? `Sit with "${trait}"` : 'Sit with your chosen self'}
           line="Take 45 seconds to sit with it. Let it settle in your body. Notice where you feel it."
         >
-          <div className={`scan-space jump-embody ${embodying ? 'is-running' : ''} ${embodied ? 'is-done' : ''}`}>
-            <p className="jump-word" aria-hidden>{chosen}</p>
-            {embodying && (
-              <Timer
-                seconds={45}
-                label="Embodiment practice"
-                className="scan-time"
-                onDone={() => {
-                  setEmbodying(false);
-                  setEmbodied(true);
-                }}
-              />
-            )}
-            {embodying && <p className="scan-cue">Where do you feel it?</p>}
-          </div>
-          {!embodying && (
-            <button className={`btn-flow ${embodied ? '' : 'btn-flow--primary'} justify-self-start`} onClick={() => setEmbodying(true)}>
-              {embodied ? 'Sit again' : 'Begin 45 seconds'}
-            </button>
-          )}
+          <EmbodyWord word={chosen} onDone={() => setEmbodied(true)} />
           <Actions onBack={back}>
             <button className={`btn-flow ${embodied ? 'btn-flow--primary' : ''}`} onClick={() => setStep('overlap')}>
               {embodied ? 'Continue' : 'Skip'}
@@ -439,7 +436,6 @@ export default function Jump() {
           title="What labels feel heavy right now?"
           line="Release all judgments about your current reality positive and negative."
         >
-          <p className="field-hint">“Who I have been being and what has that created in my reality?”</p>
           <div className="flex gap-2 items-stretch">
             <div className="input-panel flex-1">
               <input
@@ -463,6 +459,14 @@ export default function Jump() {
               ))}
             </ul>
           )}
+          <div className="jump-direction">
+            <p className="kicker">When the hold begins</p>
+            <p>
+              {labels.length > 0
+                ? 'Watch each word drift apart into single letters. Let the meaning fall away until they are only letters, and then nothing.'
+                : 'Let yourself move towards neutrality. In the void no realities are better than another.'}
+            </p>
+          </div>
           <Actions onBack={back}>
             <button className="btn-flow btn-flow--primary" onClick={startHold}>Begin hold (90s)</button>
           </Actions>
