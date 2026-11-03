@@ -87,6 +87,11 @@ export function ArtifactMap({ className = '' }: ArtifactMapProps) {
         This is your process map. Start with Safety, flow step by step, and return to VOID anytime you want to reset.
       </p>
 
+      <div className="map-jump">
+        <p className="kicker">One sitting · about ten minutes</p>
+        <Link to="/jump" className="btn-flow btn-flow--primary">Begin a Timeline Jump</Link>
+      </div>
+
       {/* Wide screens: the loop beside a preview of the step under your hand */}
       <div className="flow-map__wide">
         <div className="flow-orbit">

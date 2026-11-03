@@ -1,35 +1,21 @@
 import { useEffect, useState } from 'react';
-import Timer from '../components/Timer';
 import SafetyIllustration from '../assets/safety.svg?react';
-import safetyArt from '../assets/safety.svg';
+import BodyScan from '../components/BodyScan';
 import { ChipList } from '../components/Chips';
 import { addEntry } from '../storage/storage';
 import { getSuggestions } from '../ml';
 import { ScenePlate, SceneNext } from '../components/ScenePlate';
 
-// Ordered to follow the scan down the body: head and breath, shoulders, feet, then the whole of you.
-const SCAN_CUES = [
-  "Notice your breath...",
-  "Check in with your shoulders...",
-  "Feel your feet on the ground...",
-  "Sense the space around you...",
-  "Listen to what your body needs..."
-];
-
 export default function Safety() {
   const [consent, setConsent] = useState('');
   const [needsText, setNeedsText] = useState('');
   const [chips, setChips] = useState<{ id: string; text: string; source: 'seed' | 'user' }[]>([]);
-  const [scanStarted, setScanStarted] = useState(false);
-  const [scanDone, setScanDone] = useState(false);
-  const [scanRun, setScanRun] = useState(0);
   const [env, setEnv] = useState<string[]>([]);
   const [partName, setPartName] = useState('');
   const [partNeed, setPartNeed] = useState('');
   const [status, setStatus] = useState('');
   const [bodyReflection, setBodyReflection] = useState('');
   const [customEnv, setCustomEnv] = useState('');
-  const [currentScanCue, setCurrentScanCue] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -37,23 +23,6 @@ export default function Safety() {
       getSuggestions('needs', needsText).then(result => setChips(result.items)).catch(() => setChips([]));
     }
   }, [needsText, consent]);
-
-  // Rotating scan cues during 30s timer
-  useEffect(() => {
-    if (!scanStarted || scanDone) return;
-    const cues = SCAN_CUES;
-    const interval = setInterval(() => {
-      setCurrentScanCue(prev => (prev + 1) % cues.length);
-    }, 6000); // Change every 6 seconds during 30s scan
-    return () => clearInterval(interval);
-  }, [scanStarted, scanDone, scanRun]);
-
-  function startScan() {
-    setCurrentScanCue(0);
-    setScanDone(false);
-    setScanStarted(true);
-    setScanRun((n) => n + 1);
-  }
 
   async function save() {
     setLoading(true);
@@ -228,40 +197,7 @@ export default function Safety() {
             <p className="panel-title"><span className="step-num">03</span>Body scan</p>
             <p className="panel-text">Close your eyes and notice how your body feels right now.</p>
           </div>
-          {/* The scan itself: a band of attention moves from head to feet over the 30 seconds,
-              and what it has passed stays lit. The band is the timer. */}
-          <div
-            key={scanRun}
-            className={`scan-space ${scanStarted && !scanDone ? 'is-scanning' : ''} ${scanDone ? 'is-done' : ''}`}
-          >
-            <div className="scan-figure" aria-hidden>
-              <img src={safetyArt} alt="" className="scan-layer scan-layer--base" />
-              <img src={safetyArt} alt="" className="scan-layer scan-layer--trail" />
-              <img src={safetyArt} alt="" className="scan-layer scan-layer--band" />
-            </div>
-            {scanStarted && !scanDone && (
-              <Timer
-                seconds={30}
-                label="30 second scan"
-                className="scan-time"
-                onDone={() => setScanDone(true)}
-              />
-            )}
-            {scanStarted && !scanDone && (
-              <p className="scan-cue" aria-live="polite">
-                {SCAN_CUES[currentScanCue]}
-              </p>
-            )}
-          </div>
-          {(!scanStarted || scanDone) && (
-            <button
-              className={`btn-flow ${scanDone ? '' : 'btn-flow--primary'} justify-self-start`}
-              onClick={startScan}
-              aria-label="Start 30 second scan"
-            >
-              Start 30-second scan
-            </button>
-          )}
+          <BodyScan />
 
           {/* Section 5: Body reflection (after scan) */}
           <div className="grid gap-2 pt-2">

@@ -11,6 +11,7 @@ import Resets from './scenes/Resets';
 import TextOnlyReader from './scenes/TextOnlyReader';
 import StorageReveal from './scenes/Storage';
 import FAQ from './scenes/FAQ';
+import Jump from './scenes/Jump';
 import FlowMap from './components/FlowMap';
 import { ArtifactMap } from './components/artifact/ArtifactMap';
 import FlowProgressNav, { FlowProgressNavCompact } from './components/FlowProgressNav';
@@ -157,6 +158,7 @@ export default function App() {
               <Route path="/" element={<ModeSelector />} />
               <Route path="/text" element={<TextOnlyReader />} />
               <Route path="/artifact" element={<section className="flow-page"><h1 className="scene-title text-center">Timeline Jump Flow</h1><ArtifactMap /></section>} />
+              <Route path="/jump" element={<Jump />} />
               <Route path="/artifact/safety" element={<Safety />} />
               <Route path="/artifact/clarity" element={<Clarity />} />
               <Route path="/artifact/void" element={<VOIDScene />} />

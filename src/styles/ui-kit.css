@@ -2370,3 +2370,314 @@ a {
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------
+   Timeline Jump: one sitting, one question per screen
+   --------------------------------------------------------------- */
+.map-jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1.25rem;
+  margin: 0.5rem auto 1.5rem;
+}
+
+.jump {
+  display: grid;
+  gap: 2.5rem;
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.jump-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 1.5rem;
+}
+
+.jump-progress__dots {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jump-progress__dots li {
+  width: 9px;
+  height: 9px;
+  box-shadow: 0 0 0 1px var(--rule-strong);
+  transition: background-color 0.6s ease;
+}
+
+.jump-progress__dots li.is-past {
+  background: var(--ink-2);
+  box-shadow: none;
+}
+
+.jump-progress__dots li.is-now {
+  background: var(--accent);
+  box-shadow: none;
+}
+
+/* The chosen trait travels with the person once it has been embodied */
+.jump-as {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.jump-as strong {
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.jump-screen {
+  display: grid;
+  gap: 1.75rem;
+}
+
+/* Focus moves to the question for screen readers; it needs no ring */
+.jump-title:focus {
+  outline: none;
+}
+
+.jump-title {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+/* A line from the guide, in its own words */
+.jump-line {
+  font-size: 1.12rem;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 34rem;
+}
+
+.jump-outline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 1.1rem 0;
+  border-block: 1px solid var(--rule);
+  font-size: 0.95rem;
+  color: var(--ink-2);
+}
+
+.jump-outline li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.jump-last {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1.4rem;
+  border-radius: 14px;
+  background: var(--well);
+  box-shadow: var(--recess);
+}
+
+.jump-last__trait {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.jump-last__overlap {
+  color: var(--ink-2);
+}
+
+.jump-last .jump-actions {
+  padding-top: 0.6rem;
+}
+
+.jump-actions {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.jump-actions__go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+@media (max-width: 639px) {
+  .jump {
+    gap: 1.75rem;
+  }
+
+  .jump-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jump-actions__go {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .jump-actions .btn-flow,
+  .jump-actions .btn-quiet {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Embody: the chosen word sits in the well and breathes */
+.jump-embody {
+  flex-direction: column;
+}
+
+.jump-word {
+  padding: 0 1.5rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 9vw, 4.75rem);
+  line-height: 1;
+  text-align: center;
+  color: var(--ink);
+  opacity: 0.35;
+  transition: opacity 1.6s ease, color 1.6s ease;
+}
+
+.jump-embody.is-running .jump-word {
+  opacity: 1;
+  color: var(--accent);
+  animation: jumpBreathe 8s ease-in-out infinite;
+}
+
+.jump-embody.is-done .jump-word {
+  opacity: 1;
+  color: var(--ink);
+}
+
+@keyframes jumpBreathe {
+  0%, 100% { transform: scale(0.97); }
+  50% { transform: scale(1.03); }
+}
+
+.jump-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jump-labels li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 38px;
+  padding: 0 0.4rem 0 0.9rem;
+  border-radius: 999px;
+  background: var(--void);
+  color: var(--void-ink);
+  font-size: 0.92rem;
+}
+
+.jump-labels button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--void-ink-2);
+  cursor: pointer;
+}
+
+.jump-labels button:hover {
+  background: var(--void-raised);
+}
+
+/* The hold takes the whole room */
+.jump-hold {
+  justify-content: space-between;
+}
+
+.jump-hold__kicker {
+  color: var(--void-ink-3);
+}
+
+.jump-hold__kicker .kicker__index {
+  color: var(--void-accent);
+}
+
+.jump-hold__center {
+  display: grid;
+  justify-items: center;
+  gap: 2.5rem;
+  max-width: 34rem;
+}
+
+.jump-hold__labels {
+  display: grid;
+  gap: 1rem;
+}
+
+.jump-hold .void-timer {
+  font-size: 1.1rem;
+  color: var(--void-ink-3);
+}
+
+.jump-hold__actions {
+  min-height: 52px;
+}
+
+.jump-kept {
+  display: grid;
+  gap: 1.1rem;
+  margin: 0;
+  padding: 1.4rem;
+  border-radius: 14px;
+  background: var(--well);
+  box-shadow: var(--recess);
+}
+
+.jump-kept dt {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.jump-kept dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.1rem;
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jump-embody.is-running .jump-word {
+    animation: none;
+  }
+
+  .jump-word,
+  .jump-progress__dots li {
+    transition: none;
+  }
+}
